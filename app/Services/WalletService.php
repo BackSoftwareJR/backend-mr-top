@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\PaymentMethod;
 use App\Enums\TransactionStatus;
 use App\Enums\TransactionType;
 use App\Exceptions\InsufficientCreditsException;
@@ -68,6 +69,50 @@ class WalletService
                 'credits_delta' => -$credits,
                 'status' => TransactionStatus::Completed,
                 'description' => $description ?? 'Lead unlock',
+                'completed_at' => now(),
+            ]);
+
+            return [
+                'wallet' => $wallet->fresh(),
+                'transaction' => $transaction,
+            ];
+        });
+    }
+
+    /**
+     * @return array{wallet: Wallet, transaction: Transaction}
+     */
+    public function addCredits(
+        Company $company,
+        int $credits,
+        int $amountCents,
+        PaymentMethod $paymentMethod,
+        ?string $description = null,
+    ): array {
+        return DB::transaction(function () use ($company, $credits, $amountCents, $paymentMethod, $description): array {
+            $wallet = Wallet::query()
+                ->where('company_id', $company->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($wallet === null) {
+                $wallet = $this->getOrCreateWallet($company);
+                $wallet = Wallet::query()->whereKey($wallet->id)->lockForUpdate()->firstOrFail();
+            }
+
+            $wallet->balance_credits += $credits;
+            $wallet->save();
+
+            $transaction = Transaction::query()->create([
+                'company_id' => $company->id,
+                'wallet_id' => $wallet->id,
+                'public_ref' => 'TX-'.now()->format('YmdHis').'-'.$company->id,
+                'type' => TransactionType::Recharge,
+                'amount_cents' => $amountCents,
+                'credits_delta' => $credits,
+                'status' => TransactionStatus::Completed,
+                'payment_method' => $paymentMethod,
+                'description' => $description ?? 'Ricarica crediti',
                 'completed_at' => now(),
             ]);
 

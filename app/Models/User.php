@@ -127,4 +127,13 @@ class User extends Authenticatable
     {
         return $this->morphMany(Notification::class, 'notifiable');
     }
+
+    public function getOnboardingStatusAttribute(): ?string
+    {
+        if ($this->user_type !== UserType::B2b) {
+            return null;
+        }
+
+        return $this->companies()->first()?->vetting_status?->value;
+    }
 }

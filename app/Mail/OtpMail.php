@@ -2,7 +2,6 @@
 
 namespace App\Mail;
 
-use App\Mail\Concerns\QueuesOnDatabase;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -17,13 +16,15 @@ use Illuminate\Queue\SerializesModels;
 class OtpMail extends Mailable implements ShouldQueue
 {
     use Queueable;
-    use QueuesOnDatabase;
     use SerializesModels;
 
     public function __construct(
         public readonly string $code,
         public readonly int $expiresInMinutes = 10,
-    ) {}
+    ) {
+        $this->onConnection('database');
+        $this->onQueue('default');
+    }
 
     public function envelope(): Envelope
     {

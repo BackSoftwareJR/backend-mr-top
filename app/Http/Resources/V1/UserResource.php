@@ -33,10 +33,7 @@ class UserResource extends JsonResource
             'email' => $user->email,
             'name' => $user->name,
             'user_type' => $user->user_type->value,
-            'onboarding_status' => $this->when(
-                isset($user->onboarding_status),
-                fn () => $user->onboarding_status,
-            ),
+            'onboarding_status' => $user->onboarding_status,
         ];
     }
 }

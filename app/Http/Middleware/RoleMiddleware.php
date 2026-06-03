@@ -47,6 +47,7 @@ class RoleMiddleware
     private function userHasRole(User $user, string $role): bool
     {
         return match ($role) {
+            'consumer' => $user->user_type === UserType::Consumer,
             'partner' => $user->user_type === UserType::B2b
                 || $user->roles()->whereIn('name', ['partner', 'partner_owner', 'partner_staff'])->exists(),
             'superadmin' => $user->user_type === UserType::Superadmin

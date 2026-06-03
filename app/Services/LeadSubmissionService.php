@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Enums\LeadStatus;
 use App\Http\Requests\V1\B2C\StoreLeadRequest;
+use App\Jobs\ProcessLeadMatching;
 use App\Models\Lead;
 use App\Models\Sector;
 use App\Models\User;
@@ -47,6 +48,8 @@ class LeadSubmissionService
                 $user,
                 $validated,
             );
+
+            ProcessLeadMatching::dispatch($lead->id);
 
             return $lead->fresh();
         });

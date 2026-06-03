@@ -69,7 +69,7 @@ class LeadSubmissionTest extends TestCase
 
         $response->assertCreated()
             ->assertJsonPath('success', true)
-            ->assertJsonPath('data.lead.status', LeadStatus::Processing->value)
+            ->assertJsonPath('data.lead.status', LeadStatus::Routed->value)
             ->assertJsonStructure([
                 'success',
                 'data' => [
