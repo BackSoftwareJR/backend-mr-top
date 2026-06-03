@@ -1,0 +1,122 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.wenando.com/schemas/sector_dynamic_attributes.json",
+  "title": "Sector Dynamic Attributes Template",
+  "description": "Template for companies.dynamic_attributes / sectors.operations_schema driven fields",
+  "type": "object",
+  "required": ["sector_slug", "fields"],
+  "properties": {
+    "sector_slug": {
+      "type": "string",
+      "examples": ["senior-care", "home-renovation"]
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type", "label"],
+        "properties": {
+          "id": { "type": "string" },
+          "type": {
+            "type": "string",
+            "enum": ["text", "number", "select", "toggle", "textarea"]
+          },
+          "label": { "type": "string" },
+          "placeholder": { "type": "string" },
+          "required": { "type": "boolean", "default": false },
+          "hint": { "type": "string" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["value", "label"],
+              "properties": {
+                "value": { "type": "string" },
+                "label": { "type": "string" }
+              }
+            }
+          },
+          "rows": { "type": "integer", "minimum": 2, "maximum": 10 }
+        }
+      }
+    }
+  },
+  "examples": [
+    {
+      "sector_slug": "senior-care",
+      "fields": [
+        {
+          "id": "sector",
+          "type": "select",
+          "label": "Settore operativo",
+          "required": true,
+          "options": [
+            { "value": "rsa", "label": "RSA / Residenza" },
+            { "value": "adi", "label": "Assistenza domiciliare" },
+            { "value": "centro", "label": "Centro diurno" },
+            { "value": "clinica", "label": "Clinica / Ambulatorio" }
+          ]
+        },
+        {
+          "id": "capacity",
+          "type": "number",
+          "label": "Posti / slot disponibili al mese",
+          "placeholder": "es. 12",
+          "required": true
+        },
+        {
+          "id": "nonSelfSufficient",
+          "type": "toggle",
+          "label": "Accettazione non autosufficienti",
+          "hint": "La struttura è equipaggiata per ospiti con bisogni elevati"
+        },
+        {
+          "id": "nightStaff",
+          "type": "toggle",
+          "label": "Personale notturno certificato",
+          "hint": "Presidio H24 per emergenze"
+        },
+        {
+          "id": "notes",
+          "type": "textarea",
+          "label": "Note operative",
+          "placeholder": "Servizi aggiuntivi, limitazioni, ecc.",
+          "rows": 3
+        }
+      ]
+    },
+    {
+      "sector_slug": "home-renovation",
+      "fields": [
+        {
+          "id": "project_type",
+          "type": "select",
+          "label": "Tipo intervento",
+          "required": true,
+          "options": [
+            { "value": "bagno", "label": "Bagno" },
+            { "value": "cucina", "label": "Cucina" },
+            { "value": "completa", "label": "Ristrutturazione completa" }
+          ]
+        },
+        {
+          "id": "sqm",
+          "type": "number",
+          "label": "Metri quadri",
+          "required": true
+        },
+        {
+          "id": "timeline",
+          "type": "select",
+          "label": "Tempistiche desiderate",
+          "options": [
+            { "value": "urgente", "label": "Entro 30 giorni" },
+            { "value": "3mesi", "label": "Entro 3 mesi" },
+            { "value": "flessibile", "label": "Flessibile" }
+          ]
+        }
+      ],
+      "_note": "[ASSUNZIONE] Future sector — not in frontend yet"
+    }
+  ]
+}

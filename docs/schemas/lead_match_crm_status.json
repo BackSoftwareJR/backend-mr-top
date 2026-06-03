@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.wenando.com/schemas/lead_match_crm_status.json",
+  "title": "Lead Match CRM Status",
+  "description": "CRM pipeline states for lead_matches — from mockB2B.js CRM_STATUSES and B2BContext",
+  "type": "object",
+  "definitions": {
+    "crmStatusDb": {
+      "type": "string",
+      "enum": ["nuovo", "contattato", "visita_fissata", "perso", "chiuso"]
+    },
+    "crmStatusUi": {
+      "type": "string",
+      "enum": ["Nuovo", "Contattato", "Visita Fissata", "Perso", "Chiuso"]
+    }
+  },
+  "properties": {
+    "canonical_db_values": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/crmStatusDb" }
+    },
+    "ui_labels_it": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "nuovo": { "const": "Nuovo" },
+        "contattato": { "const": "Contattato" },
+        "visita_fissata": { "const": "Visita Fissata" },
+        "perso": { "const": "Perso" },
+        "chiuso": { "const": "Chiuso" }
+      }
+    },
+    "initial_status_on_unlock": {
+      "const": "nuovo",
+      "description": "B2BContext.unlockLead sets stato Nuovo when creating CRM client"
+    },
+    "auto_transitions": {
+      "type": "array",
+      "description": "Side effects triggered by other actions",
+      "items": {
+        "type": "object",
+        "properties": {
+          "trigger": { "type": "string" },
+          "from": { "$ref": "#/definitions/crmStatusDb" },
+          "to": { "$ref": "#/definitions/crmStatusDb" }
+        }
+      },
+      "default": [
+        {
+          "trigger": "POST /b2b/appointments (schedule visit)",
+          "from": "*",
+          "to": "visita_fissata",
+          "note": "B2BContext.scheduleVisit forces Visita Fissata"
+        }
+      ]
+    },
+    "allowed_manual_transitions": {
+      "type": "object",
+      "description": "PATCH /b2b/crm/clients/{id} — any to any except from chiuso [ASSUNZIONE: lock closed deals]",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/crmStatusDb" }
+      },
+      "default": {
+        "nuovo": ["contattato", "visita_fissata", "perso", "chiuso"],
+        "contattato": ["visita_fissata", "perso", "chiuso"],
+        "visita_fissata": ["perso", "chiuso"],
+        "perso": ["contattato", "chiuso"],
+        "chiuso": []
+      }
+    },
+    "terminal_states": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/crmStatusDb" },
+      "default": ["perso", "chiuso"]
+    }
+  }
+}

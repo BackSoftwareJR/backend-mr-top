@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.wenando.com/schemas/wizard_senior_care_payload.json",
+  "title": "Senior Care Wizard Payload",
+  "description": "leads.payload for sector senior-care — derived from wizardConfig.js, WizardSteps.jsx, Wizard.jsx",
+  "type": "object",
+  "required": ["autonomy", "location", "budget", "contact"],
+  "additionalProperties": false,
+  "properties": {
+    "autonomy": {
+      "type": "string",
+      "enum": ["autosufficiente", "parziale", "non-autosufficiente"],
+      "description": "Step 1 — Livello di autonomia"
+    },
+    "location": {
+      "type": "object",
+      "required": ["label", "value"],
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 128,
+          "description": "Display label e.g. Milano (MI)"
+        },
+        "value": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 64,
+          "pattern": "^[a-z0-9-]+$",
+          "description": "Normalized slug e.g. milano-mi"
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["min", "max"],
+      "additionalProperties": false,
+      "properties": {
+        "min": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 4900,
+          "description": "EUR/month — wizardConfig min 500"
+        },
+        "max": {
+          "type": "integer",
+          "minimum": 600,
+          "maximum": 5000,
+          "description": "EUR/month — wizardConfig max 5000"
+        }
+      }
+    },
+    "contact": {
+      "type": "object",
+      "required": ["nome", "telefono"],
+      "additionalProperties": false,
+      "properties": {
+        "nome": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Contact first name"
+        },
+        "telefono": {
+          "type": "string",
+          "minLength": 8,
+          "maxLength": 32,
+          "pattern": "^\\+?[0-9\\s\\-]{8,32}$",
+          "description": "Phone — E.164 preferred in API layer"
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "budget.max must exceed budget.min by at least step (100)",
+      "properties": {
+        "budget": {
+          "type": "object"
+        }
+      }
+    }
+  ]
+}

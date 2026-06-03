@@ -1,0 +1,105 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://api.wenando.com/schemas/company_onboarding_payload.json",
+  "title": "B2B Company Onboarding Data",
+  "description": "PATCH /b2b/onboarding data object — StepLegal, StepOperations, StepTrustTest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "vat": {
+      "type": "string",
+      "pattern": "^IT[0-9]{11}$",
+      "description": "Partita IVA italiana"
+    },
+    "sdi": {
+      "type": "string",
+      "minLength": 7,
+      "maxLength": 7,
+      "pattern": "^[A-Z0-9]{7}$",
+      "description": "Codice SDI / Codice destinatario"
+    },
+    "visura": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Original filename after upload — stored in company_documents"
+    },
+    "identity_doc": {
+      "type": "string",
+      "maxLength": 255,
+      "description": "Original filename after upload"
+    },
+    "dynamic": {
+      "$ref": "#/definitions/dynamicAttributes"
+    },
+    "schedule": {
+      "$ref": "#/definitions/weeklySchedule"
+    },
+    "trust_answers": {
+      "$ref": "#/definitions/trustAnswers"
+    }
+  },
+  "definitions": {
+    "dynamicAttributes": {
+      "type": "object",
+      "required": ["sector"],
+      "additionalProperties": true,
+      "properties": {
+        "sector": {
+          "type": "string",
+          "enum": ["rsa", "adi", "centro", "clinica"],
+          "description": "OPERATIONS_FORM_CONFIG — sub-vertical within senior-care"
+        },
+        "capacity": {
+          "type": ["string", "integer"],
+          "description": "Posti/slot disponibili al mese"
+        },
+        "nonSelfSufficient": {
+          "type": "boolean"
+        },
+        "nightStaff": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 2000
+        }
+      }
+    },
+    "daySchedule": {
+      "type": "object",
+      "required": ["open", "slots"],
+      "properties": {
+        "open": { "type": "boolean" },
+        "slots": {
+          "type": "string",
+          "maxLength": 128,
+          "description": "e.g. 09:00-12:00, 15:00-18:00"
+        }
+      }
+    },
+    "weeklySchedule": {
+      "type": "object",
+      "properties": {
+        "mon": { "$ref": "#/definitions/daySchedule" },
+        "tue": { "$ref": "#/definitions/daySchedule" },
+        "wed": { "$ref": "#/definitions/daySchedule" },
+        "thu": { "$ref": "#/definitions/daySchedule" },
+        "fri": { "$ref": "#/definitions/daySchedule" },
+        "sat": { "$ref": "#/definitions/daySchedule" },
+        "sun": { "$ref": "#/definitions/daySchedule" }
+      },
+      "description": "At least one day must have open=true and non-empty slots (Onboarding.canProceed step 1)"
+    },
+    "trustAnswers": {
+      "type": "object",
+      "required": ["emergency", "fall", "family", "quality"],
+      "additionalProperties": false,
+      "properties": {
+        "emergency": { "type": "string", "minLength": 10, "maxLength": 5000 },
+        "fall": { "type": "string", "minLength": 10, "maxLength": 5000 },
+        "family": { "type": "string", "minLength": 10, "maxLength": 5000 },
+        "quality": { "type": "string", "minLength": 3, "maxLength": 500 }
+      }
+    }
+  }
+}
