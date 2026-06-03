@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ApiException;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Responses\ApiErrorResponse;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -55,6 +56,16 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return ApiErrorResponse::make($code, $message, $status, $details);
         };
+
+        $exceptions->render(function (ApiException $e, Request $request) use ($apiRender) {
+            return $apiRender(
+                $request,
+                $e->errorCode,
+                $e->getMessage(),
+                $e->status,
+                $e->details,
+            );
+        });
 
         $exceptions->render(function (ValidationException $e, Request $request) use ($apiRender) {
             return $apiRender(

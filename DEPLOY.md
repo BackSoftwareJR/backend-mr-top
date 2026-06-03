@@ -117,7 +117,23 @@ Use `--fresh-seed` only on empty databases (see script help).
 
 ---
 
-## 9. Health checks
+## 9. Email verification (SMTP)
+
+After `MAIL_*` is set in `.env` (password from hPanel only — never commit):
+
+```bash
+php artisan config:clear
+php artisan config:cache
+php artisan wenando:mail-test your-inbox@example.com
+```
+
+Confirm delivery (inbox or spam). Align DNS: SPF, DKIM, DMARC — see `docs/11_EMAIL_&_DELIVERABILITY.md`.
+
+Queued transactional mail (`OtpMail`, `WelcomeMail`) requires the cron `queue:work` job (section 7).
+
+---
+
+## 10. Health checks
 
 ```bash
 curl -sS https://api.wenando.com/up
@@ -132,7 +148,7 @@ Expected `/api/v1/health`:
 
 ---
 
-## 10. Update deploy (no fresh)
+## 11. Update deploy (no fresh)
 
 ```bash
 git pull origin main
@@ -172,7 +188,7 @@ php artisan view:cache
 | `QUEUE_CONNECTION` | ✓ | `database` |
 | `CACHE_STORE` | ✓ | `file` |
 | `SANCTUM_STATEFUL_DOMAINS` | ✓ | `wenando.com,www.wenando.com` |
-| `MAIL_*` | ✓ | OTP email |
+| `MAIL_*` | ✓ | Hostinger SMTP (`hola@wenando.com`); see `docs/11_EMAIL_&_DELIVERABILITY.md` |
 | `WENANDO_PRIVACY_POLICY_VERSION` | ✓ | `1.0.0` |
 | `HCAPTCHA_SECRET` | prod | Bot protection |
 | `SENTRY_LARAVEL_DSN` | optional | Error tracking |

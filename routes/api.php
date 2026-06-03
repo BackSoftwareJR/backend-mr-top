@@ -1,5 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\DashboardStatsController;
+use App\Http\Controllers\Api\V1\Admin\PartnerApprovalController;
+use App\Http\Controllers\Api\V1\B2B\AuthController as B2BAuthController;
+use App\Http\Controllers\Api\V1\B2B\CrmController;
+use App\Http\Controllers\Api\V1\B2B\LeadMarketplaceController;
 use App\Http\Controllers\Api\V1\B2C\LeadSubmissionController;
 use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\HealthController;
@@ -37,10 +42,13 @@ Route::prefix('v1')->group(function (): void {
 
     /*
     |--------------------------------------------------------------------------
-    | B2B — partner portal (approved partners)
+    | B2B — partner portal
     |--------------------------------------------------------------------------
     */
     Route::prefix('b2b')->group(function (): void {
+        Route::post('/auth/login', [B2BAuthController::class, 'login'])
+            ->middleware('throttle:auth-otp-verify');
+
         Route::post('/register', NotImplementedController::class);
 
         Route::middleware(['auth:sanctum', 'role:partner'])->group(function (): void {
@@ -55,11 +63,13 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/wallet/recharge', NotImplementedController::class);
             Route::get('/wallet/transactions', NotImplementedController::class);
 
-            Route::get('/marketplace/leads', NotImplementedController::class);
-            Route::post('/marketplace/leads/{id}/unlock', NotImplementedController::class);
+            Route::get('/marketplace/leads', [LeadMarketplaceController::class, 'index']);
+            Route::get('/marketplace', [LeadMarketplaceController::class, 'index']);
+            Route::post('/marketplace/leads/{id}/unlock', [LeadMarketplaceController::class, 'unlock']);
+            Route::post('/leads/{id}/unlock', [LeadMarketplaceController::class, 'unlock']);
 
-            Route::get('/crm/clients', NotImplementedController::class);
-            Route::patch('/crm/clients/{id}', NotImplementedController::class);
+            Route::get('/crm/clients', [CrmController::class, 'index']);
+            Route::patch('/crm/clients/{id}', [CrmController::class, 'update']);
 
             Route::get('/appointments', NotImplementedController::class);
             Route::post('/appointments', NotImplementedController::class);
@@ -76,7 +86,9 @@ Route::prefix('v1')->group(function (): void {
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin')->middleware(['auth:sanctum', 'role:superadmin', 'throttle:admin'])->group(function (): void {
-        Route::get('/metrics', NotImplementedController::class);
+        Route::get('/dashboard/stats', [DashboardStatsController::class, 'index']);
+        Route::get('/metrics', [DashboardStatsController::class, 'index']);
+
         Route::get('/revenue/timeline', NotImplementedController::class);
         Route::get('/leads/flow', NotImplementedController::class);
         Route::get('/portfolio/summary', NotImplementedController::class);
@@ -88,11 +100,14 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/transactions/{id}', NotImplementedController::class);
 
         Route::get('/partners', NotImplementedController::class);
-        Route::get('/partners/{id}', NotImplementedController::class);
-        Route::post('/partners/{id}/approve', NotImplementedController::class);
-        Route::post('/partners/{id}/reject', NotImplementedController::class);
-        Route::post('/partners/{id}/suspend', NotImplementedController::class);
-        Route::post('/partners/{id}/impersonate', NotImplementedController::class);
+        Route::get('/partners/{company}', NotImplementedController::class);
+        Route::post('/partners/{company}/approve', [PartnerApprovalController::class, 'approve']);
+        Route::post('/partners/{company}/reject', [PartnerApprovalController::class, 'reject']);
+        Route::post('/partners/{company}/suspend', NotImplementedController::class);
+        Route::post('/partners/{company}/impersonate', NotImplementedController::class);
+
+        Route::post('/companies/{company}/approve', [PartnerApprovalController::class, 'approve']);
+        Route::post('/companies/{company}/reject', [PartnerApprovalController::class, 'reject']);
 
         Route::get('/leads', NotImplementedController::class);
         Route::get('/leads/{id}', NotImplementedController::class);

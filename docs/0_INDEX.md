@@ -20,6 +20,7 @@
 | 8 | [7_SECURITY_&_COMPLIANCE_GUIDELINES.md](./7_SECURITY_&_COMPLIANCE_GUIDELINES.md) | Security, Legal | GDPR, OTP, upload, audit, impersonation |
 | 9 | [9_DEPLOYMENT_&_OPERATIONS_RUNBOOK.md](./9_DEPLOYMENT_&_OPERATIONS_RUNBOOK.md) | DevOps | Hostinger SSH, cron, env, backup, health |
 | 10 | [10_SQL_REVIEW_&_GAPS.md](./10_SQL_REVIEW_&_GAPS.md) | DBA, Backend | Allineamento frontend ↔ SQL, gap, migrazioni |
+| 11 | [11_EMAIL_&_DELIVERABILITY.md](./11_EMAIL_&_DELIVERABILITY.md) | DevOps, Backend | Hostinger SMTP, SPF/DKIM/DMARC, queue mail, `wenando:mail-test` |
 
 ---
 
