@@ -80,13 +80,19 @@ class AppServiceProvider extends ServiceProvider
         });
 
         RateLimiter::for('auth-otp-request', function (Request $request) {
-            $email = (string) $request->input('email', '');
+            $email = strtolower(trim((string) $request->input('email', '')));
 
-            return Limit::perMinutes(15, 3)->by($email.'|'.$request->ip());
+            return Limit::perMinutes(15, 10)->by($email.'|'.$request->ip());
+        });
+
+        RateLimiter::for('auth-otp-resend-cooldown', function (Request $request) {
+            $email = strtolower(trim((string) $request->input('email', '')));
+
+            return Limit::perMinute(30)->by($email.'|'.$request->ip());
         });
 
         RateLimiter::for('auth-otp-verify', function (Request $request) {
-            $email = (string) $request->input('email', '');
+            $email = strtolower(trim((string) $request->input('email', '')));
 
             return Limit::perMinute(10)->by($email.'|'.$request->ip());
         });

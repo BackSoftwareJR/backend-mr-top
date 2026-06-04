@@ -244,7 +244,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/otp/verify', [OtpController::class, 'verify'])
             ->middleware('throttle:auth-otp-verify');
         Route::get('/resend-cooldown', [OtpController::class, 'resendCooldown'])
-            ->middleware('throttle:auth-otp-request');
+            ->middleware('throttle:auth-otp-resend-cooldown');
 
         Route::middleware('auth:sanctum')->group(function (): void {
             Route::post('/logout', [SessionController::class, 'logout']);
