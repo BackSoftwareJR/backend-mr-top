@@ -1,6 +1,8 @@
 # Wenando API — Hostinger SSH Deploy Checklist
 
-Laravel backend for `api.wenando.com`. Document root **must** point to `public/`.
+Laravel backend for `api.wenando.com`. Document root **must** expose only Laravel `public/` (never project root).
+
+**Hostinger Cloud:** docroot is fixed at `public_html` — put the app in sibling `api/` and a bridge `index.php` in `public_html`. Full layout: [`../docs/DEPLOY_HOSTINGER.md`](../docs/DEPLOY_HOSTINGER.md) §2.
 
 See also: `docs/9_DEPLOYMENT_&_OPERATIONS_RUNBOOK.md`, `.env.production.example`.
 
@@ -14,7 +16,7 @@ See also: `docs/9_DEPLOYMENT_&_OPERATIONS_RUNBOOK.md`, `.env.production.example`
 | Composer | 2.x |
 | MySQL | 8.0+ or MariaDB 10.6+ (Hostinger hPanel) |
 | SSH | Enabled in Hostinger panel |
-| Domains | `api.wenando.com` → `~/wenando-api/public` |
+| Domains | VPS: `~/wenando-api/public` — Cloud: `~/domains/api.wenando.com/public_html` + app in `../api` |
 
 **No Redis** — use `QUEUE_CONNECTION=database`, `CACHE_STORE=file`, `SESSION_DRIVER=database`.
 
@@ -83,8 +85,9 @@ chmod -R 775 storage bootstrap/cache
 
 ## 6. Web server
 
-- **Document root:** `/home/USER/wenando-api/public` (not project root).
-- Apache: default `public/.htaccess` is included.
+- **VPS:** document root = `/home/USER/wenando-api/public` (not project root).
+- **Hostinger Cloud:** only `public_html` is web-facing; Laravel lives in `../api` — see `docs/DEPLOY_HOSTINGER.md` §2.
+- Apache: default `public/.htaccess` copied to `public_html` on Cloud.
 - Nginx snippet:
 
 ```nginx
@@ -193,10 +196,16 @@ php artisan view:cache
 | `HCAPTCHA_SECRET` | prod | Bot protection |
 | `SENTRY_LARAVEL_DSN` | optional | Error tracking |
 
-### B2C lead flow (after seed)
+### B2C lead flow (after sector reference data)
 
-1. `POST /api/v1/consents` — register privacy + terms hashes
-2. `POST /api/v1/b2c/leads` — requires `sector_slug=senior-care` (seeded)
+1. `POST /api/v1/consents` — register privacy + terms + lead_sharing hashes
+2. `POST /api/v1/b2c/leads` — requires `sector_slug=senior-care` in `sectors` table
+
+**Production (no full `db:seed`):** after `migrate --force`, run once:
+
+```bash
+php artisan wenando:seed-sectors
+```
 
 ---
 
@@ -204,7 +213,8 @@ php artisan view:cache
 
 - [ ] `.env` not in git (see `.gitignore`)
 - [ ] `APP_DEBUG=false`
-- [ ] Web root = `public/` only
+- [ ] Web root = `public/` only (Cloud: `public_html` = contenuto di `public/` + `index.php` bridge, app in `api/`)
+- [ ] `.env` / `vendor/` / `storage/logs` mai sotto docroot
 - [ ] TrustProxies enabled (`bootstrap/app.php`)
 - [ ] CORS strict (`config/cors.php`)
 
