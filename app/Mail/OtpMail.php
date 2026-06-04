@@ -3,7 +3,6 @@
 namespace App\Mail;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Content;
@@ -11,9 +10,9 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * OTP verification email (stub — wire from auth flow when implemented).
+ * OTP verification email — sent synchronously from OtpAuthService (critical path).
  */
-class OtpMail extends Mailable implements ShouldQueue
+class OtpMail extends Mailable
 {
     use Queueable;
     use SerializesModels;
@@ -21,10 +20,7 @@ class OtpMail extends Mailable implements ShouldQueue
     public function __construct(
         public readonly string $code,
         public readonly int $expiresInMinutes = 10,
-    ) {
-        $this->onConnection('database');
-        $this->onQueue('default');
-    }
+    ) {}
 
     public function envelope(): Envelope
     {

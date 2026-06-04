@@ -132,7 +132,7 @@ php artisan wenando:mail-test your-inbox@example.com
 
 Confirm delivery (inbox or spam). Align DNS: SPF, DKIM, DMARC — see `docs/11_EMAIL_&_DELIVERABILITY.md`.
 
-Queued transactional mail (`OtpMail`, `WelcomeMail`) requires the cron `queue:work` job (section 7).
+OTP login mail (`OtpMail`) is sent **synchronously** during `POST /auth/otp/request`. Queued mail such as `WelcomeMail` still requires the cron `queue:work` job (section 7).
 
 ---
 

@@ -74,6 +74,28 @@ class UserAreaService
     }
 
     /**
+     * Link orphan wizard leads whose contact_email matches the authenticated consumer.
+     */
+    public function attachOrphanLeadsByEmail(User $user): User
+    {
+        $email = Str::lower(trim($user->email));
+
+        $orphans = Lead::query()
+            ->whereNull('user_id')
+            ->whereNotNull('contact_email')
+            ->whereRaw('LOWER(contact_email) = ?', [$email])
+            ->orderBy('id')
+            ->get();
+
+        foreach ($orphans as $lead) {
+            $lead->update(['user_id' => $user->id]);
+            $user = $this->hydrateUserProfileFromLead($user, $lead->fresh());
+        }
+
+        return $user->fresh();
+    }
+
+    /**
      * @return array{lead: Lead, user: User}
      */
     public function attachLeadToUser(User $user, string $leadUuid): array

@@ -9,6 +9,7 @@ use App\Enums\UserType;
 use App\Models\Lead;
 use App\Models\Sector;
 use App\Models\User;
+use App\Services\UserAreaService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -117,6 +118,24 @@ class UserAttachLeadTest extends TestCase
         $this->postJson('/api/v1/user/leads', [
             'lead_uuid' => $lead->uuid,
         ])->assertUnauthorized();
+    }
+
+    public function test_attach_orphan_leads_by_contact_email(): void
+    {
+        $lead = $this->createOrphanLead([
+            'contact_email' => 'consumer@example.com',
+            'contact_name' => 'Giulia Bianchi',
+            'contact_phone' => '+39 340 999 8888',
+        ]);
+
+        $attached = app(UserAreaService::class)->attachOrphanLeadsByEmail($this->consumer);
+
+        $this->assertSame('Giulia Bianchi', $attached->name);
+        $this->assertSame('+39 340 999 8888', $attached->phone);
+        $this->assertDatabaseHas('leads', [
+            'id' => $lead->id,
+            'user_id' => $this->consumer->id,
+        ]);
     }
 
     /**

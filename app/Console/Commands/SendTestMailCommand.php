@@ -55,7 +55,7 @@ class SendTestMailCommand extends Command
             Mail::to($email)->send(new DeployTestMail);
 
             $this->components->success('Test message accepted by the mail transport.');
-            $this->line('  OtpMail/WelcomeMail use the database queue — run queue:work via cron for those.');
+            $this->line('  OtpMail is sent synchronously on login; WelcomeMail still uses the database queue (cron queue:work).');
             $this->line('  Check inbox and spam; verify SPF/DKIM/DMARC (docs/11_EMAIL_&_DELIVERABILITY.md).');
 
             return self::SUCCESS;

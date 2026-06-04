@@ -11,11 +11,16 @@ use App\Mail\OtpMail;
 use App\Models\OtpCode;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Throwable;
 
 class OtpAuthService
 {
+    public function __construct(
+        private readonly UserAreaService $userAreaService,
+    ) {}
     public const OTP_TTL_MINUTES = 10;
 
     public const RESEND_COOLDOWN_SECONDS = 60;
@@ -45,7 +50,27 @@ class OtpAuthService
             'attempts' => 0,
         ]);
 
-        Mail::to($email)->queue(new OtpMail($code, self::OTP_TTL_MINUTES));
+        try {
+            Mail::to($email)->send(new OtpMail($code, self::OTP_TTL_MINUTES));
+        } catch (Throwable $e) {
+            OtpCode::query()
+                ->where('email', $email)
+                ->where('expires_at', '>', $now)
+                ->delete();
+
+            Log::error('OTP mail send failed', [
+                'email' => $email,
+                'portal' => $portal->value,
+                'mailer' => config('mail.default'),
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new ApiException(
+                'OTP_MAIL_FAILED',
+                'Impossibile inviare l\'email con il codice. Riprova tra poco o controlla la cartella spam.',
+                503,
+            );
+        }
 
         $payload = [
             'email' => $email,
@@ -100,6 +125,11 @@ class OtpAuthService
         $this->assertPortalForEmail($email, $otp->portal);
 
         $user = $this->resolveUser($email, $otp->portal);
+
+        if ($otp->portal === OtpPortal::Consumer) {
+            $user = $this->userAreaService->attachOrphanLeadsByEmail($user);
+        }
+
         $user->forceFill(['last_login_at' => now(), 'email_verified_at' => now()])->save();
 
         $otp->delete();
