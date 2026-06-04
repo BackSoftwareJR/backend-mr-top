@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\B2B\SubmitOnboardingRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Services\B2bOnboardingService;
+use App\Services\B2bTrustQuestionsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,6 +16,7 @@ class OnboardingController extends Controller
 {
     public function __construct(
         private readonly B2bOnboardingService $onboardingService,
+        private readonly B2bTrustQuestionsService $trustQuestionsService,
     ) {}
 
     public function show(Request $request): JsonResponse
@@ -82,5 +84,17 @@ class OnboardingController extends Controller
         $company = $this->onboardingService->companyForUser($request->user());
 
         return ApiEnvelope::success($this->onboardingService->status($company));
+    }
+
+    public function trustQuestions(Request $request): JsonResponse
+    {
+        $company = $this->onboardingService->companyForUser($request->user());
+        $sector = (string) ($request->query('sector')
+            ?? ($company->dynamic_attributes['sector'] ?? 'rsa'));
+
+        return ApiEnvelope::success([
+            'sector' => $this->trustQuestionsService->normalizeSector($sector),
+            'questions' => $this->trustQuestionsService->forSector($sector),
+        ]);
     }
 }

@@ -124,6 +124,22 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('locations-autocomplete', function (Request $request) {
             return Limit::perMinute(60)->by($request->ip());
         });
+
+        RateLimiter::for('b2b-onboarding', function (Request $request) {
+            $user = $request->user();
+            $companyId = $user?->companies()->value('companies.id');
+            $key = $companyId ?? $user?->id ?? $request->ip();
+
+            return Limit::perMinute(300)->by('b2b-onboarding:'.(string) $key);
+        });
+
+        RateLimiter::for('b2b-onboarding-submit', function (Request $request) {
+            $user = $request->user();
+            $companyId = $user?->companies()->value('companies.id');
+            $key = $companyId ?? $user?->id ?? $request->ip();
+
+            return Limit::perMinute(10)->by('b2b-onboarding-submit:'.(string) $key);
+        });
     }
 
     private function registerSentryUserContext(): void

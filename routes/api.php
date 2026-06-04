@@ -128,11 +128,22 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/register', [RegisterController::class, 'store']);
 
         Route::middleware(['auth:sanctum', 'role:partner'])->group(function (): void {
-            Route::get('/onboarding', [OnboardingController::class, 'show']);
-            Route::patch('/onboarding', [OnboardingController::class, 'update']);
-            Route::post('/onboarding/documents', [OnboardingController::class, 'uploadDocument']);
-            Route::post('/onboarding/submit', [OnboardingController::class, 'submit']);
-            Route::get('/onboarding/status', [OnboardingController::class, 'status']);
+            Route::middleware(['throttle:b2b-onboarding'])
+                ->withoutMiddleware([ThrottleRequests::class.':api'])
+                ->group(function (): void {
+                    Route::get('/onboarding', [OnboardingController::class, 'show']);
+                    Route::patch('/onboarding', [OnboardingController::class, 'update']);
+                    Route::post('/onboarding/documents', [OnboardingController::class, 'uploadDocument']);
+                    Route::get('/onboarding/trust-questions', [OnboardingController::class, 'trustQuestions']);
+                    Route::get('/onboarding/status', [OnboardingController::class, 'status']);
+                });
+
+            Route::post('/onboarding/submit', [OnboardingController::class, 'submit'])
+                ->middleware([
+                    'throttle:b2b-onboarding-submit',
+                    'idempotent:b2b.onboarding.submit,60',
+                ])
+                ->withoutMiddleware([ThrottleRequests::class.':api']);
 
             Route::get('/company/profile', [CompanyProfileController::class, 'show']);
             Route::patch('/company/profile', [CompanyProfileController::class, 'update']);
