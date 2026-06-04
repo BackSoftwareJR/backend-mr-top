@@ -205,7 +205,10 @@ php artisan view:cache
 
 ```bash
 php artisan wenando:seed-sectors
+php artisan wenando:create-superadmin your-admin@wenando.com
 ```
+
+`wenando:create-superadmin` seeds RBAC roles/permissions if missing and creates one OTP superadmin (no demo users). Email can come from the argument or `SEED_SUPERADMIN_EMAIL` in `.env`.
 
 ---
 
