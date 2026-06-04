@@ -7,21 +7,21 @@ namespace App\Http\Controllers\Api\V1\Admin;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Models\Sector;
+use App\Services\AdminOperationsService;
+use App\Services\PlatformSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class SettingsController extends Controller
 {
+    public function __construct(
+        private readonly AdminOperationsService $adminOps,
+        private readonly PlatformSettingsService $platformSettings,
+    ) {}
+
     public function show(): JsonResponse
     {
-        $settings = Cache::get('admin.platform_settings', [
-            'security' => ['otp_ttl_minutes' => 10],
-            'automations' => ['auto_match_on_lead' => true],
-            'notifications' => ['admin_email' => config('mail.from.address')],
-        ]);
-
-        return ApiEnvelope::success($settings);
+        return ApiEnvelope::success($this->platformSettings->get());
     }
 
     public function update(Request $request): JsonResponse
@@ -32,9 +32,7 @@ class SettingsController extends Controller
             'notifications' => ['sometimes', 'array'],
         ]);
 
-        $current = Cache::get('admin.platform_settings', []);
-        $merged = array_merge($current, $validated);
-        Cache::forever('admin.platform_settings', $merged);
+        $merged = $this->platformSettings->update($validated);
 
         return ApiEnvelope::success(['settings' => $merged]);
     }
@@ -67,6 +65,6 @@ class SettingsController extends Controller
 
     public function notifications(): JsonResponse
     {
-        return ApiEnvelope::success(['notifications' => []]);
+        return ApiEnvelope::success($this->adminOps->listNotifications());
     }
 }

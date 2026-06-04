@@ -10,11 +10,15 @@ use App\Models\Company;
 use App\Models\Lead;
 use App\Models\LeadMatch;
 use App\Models\Sector;
+use App\Support\ItalianLocationParser;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class LeadMatchingService
 {
+    public function __construct(
+        private readonly ItalianLocationParser $locationParser = new ItalianLocationParser,
+    ) {}
+
     /**
      * @return list<LeadMatch>
      */
@@ -108,7 +112,7 @@ class LeadMatchingService
         }
 
         $factors = [
-            'budget_overlap' => $this->budgetScore($lead),
+            'budget_overlap' => $this->budgetScore($lead, $company),
             'geo_match' => $geo,
             'autonomy_fit' => $this->autonomyScore($lead, $company),
             'trust_score' => (int) ($company->latestTrustScore?->score ?? 70),
@@ -124,36 +128,89 @@ class LeadMatchingService
         return (int) round(min(100, max(0, $total)));
     }
 
-    private function budgetScore(Lead $lead): int
+    private function budgetScore(Lead $lead, Company $company): int
     {
         if ($lead->budget_min === null || $lead->budget_max === null) {
             return 70;
         }
 
-        $width = max(1, $lead->budget_max - $lead->budget_min);
+        $companyRange = $this->companyAcceptableBudgetRange($company);
+        if ($companyRange === null) {
+            return 70;
+        }
 
-        return (int) min(100, round(($width / max($lead->budget_max, 1)) * 100));
+        [$companyMin, $companyMax] = $companyRange;
+        $leadMin = $lead->budget_min;
+        $leadMax = $lead->budget_max;
+        $leadWidth = max(1, $leadMax - $leadMin);
+
+        $overlapMin = max($leadMin, $companyMin);
+        $overlapMax = min($leadMax, $companyMax);
+        $overlapWidth = max(0, $overlapMax - $overlapMin);
+
+        return (int) min(100, max(0, round(($overlapWidth / $leadWidth) * 100)));
+    }
+
+    /**
+     * Acceptable monthly budget (EUR) from company.dynamic_attributes.
+     *
+     * @return array{0: int, 1: int}|null [min, max] when both bounds are present
+     */
+    private function companyAcceptableBudgetRange(Company $company): ?array
+    {
+        $attrs = $company->dynamic_attributes ?? [];
+
+        $min = $attrs['budget_min'] ?? $attrs['pricing_min'] ?? null;
+        $max = $attrs['budget_max'] ?? $attrs['pricing_max'] ?? null;
+
+        if (isset($attrs['pricing']) && is_array($attrs['pricing'])) {
+            $min ??= $attrs['pricing']['min'] ?? null;
+            $max ??= $attrs['pricing']['max'] ?? null;
+        }
+
+        if (! is_numeric($min) || ! is_numeric($max)) {
+            return null;
+        }
+
+        $min = (int) $min;
+        $max = (int) $max;
+
+        if ($min > $max) {
+            return null;
+        }
+
+        return [$min, $max];
     }
 
     private function geoScore(Lead $lead, Company $company): int
     {
-        $leadCity = $this->extractCity($lead->location_label ?? '');
-        $companyCity = Str::lower($company->city ?? '');
+        return $this->locationParser->bestGeoScore(
+            $lead->location_label,
+            $this->companyLocationLabels($company),
+        );
+    }
 
-        if ($leadCity === '' || $companyCity === '') {
-            return 50;
+    /**
+     * @return list<string>
+     */
+    private function companyLocationLabels(Company $company): array
+    {
+        $labels = [];
+
+        if ($company->city !== null && trim($company->city) !== '') {
+            $labels[] = $company->city;
         }
 
-        if (str_contains($leadCity, $companyCity) || str_contains($companyCity, $leadCity)) {
-            return 100;
+        $serviceAreas = $company->dynamic_attributes['service_areas'] ?? null;
+        if (is_array($serviceAreas)) {
+            foreach ($serviceAreas as $area) {
+                if (is_string($area) && trim($area) !== '') {
+                    $labels[] = $area;
+                }
+            }
         }
 
-        $leadProvince = $this->extractProvince($lead->location_label ?? '');
-        if ($leadProvince !== '' && str_contains($lead->location_label ?? '', $company->city ?? '')) {
-            return 80;
-        }
-
-        return 30;
+        return $labels;
     }
 
     private function autonomyScore(Lead $lead, Company $company): int
@@ -199,21 +256,5 @@ class LeadMatchingService
         }
 
         return min(100, $bonus);
-    }
-
-    private function extractCity(string $label): string
-    {
-        $parts = explode(',', $label);
-
-        return strtolower(trim($parts[0] ?? $label));
-    }
-
-    private function extractProvince(string $label): string
-    {
-        if (preg_match('/\(([A-Z]{2})\)/', $label, $m)) {
-            return strtolower($m[1]);
-        }
-
-        return '';
     }
 }

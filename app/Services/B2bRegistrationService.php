@@ -6,11 +6,14 @@ namespace App\Services;
 
 use App\Enums\UserType;
 use App\Enums\VettingStatus;
+use App\Mail\B2bWelcomeMail;
 use App\Models\Company;
 use App\Models\Sector;
 use App\Models\User;
 use App\Models\Wallet;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -18,13 +21,21 @@ class B2bRegistrationService
 {
     public function __construct(
         private readonly B2bAuthService $b2bAuthService,
+        private readonly B2bCompanyProfileService $companyProfileService,
+        private readonly ConsentLogService $consentLogService,
     ) {}
 
     /**
+     * @param  array{consent_text_hash: string, policy_version?: string|null}  $consentPayload
      * @return array{user: User, company: Company, token: string}
      */
-    public function register(string $email, string $organizationName, string $legalName): array
-    {
+    public function register(
+        Request $request,
+        string $email,
+        string $organizationName,
+        string $legalName,
+        array $consentPayload,
+    ): array {
         if (User::query()->where('email', $email)->exists()) {
             throw ValidationException::withMessages([
                 'email' => ['Questo indirizzo email è già registrato.'],
@@ -33,7 +44,7 @@ class B2bRegistrationService
 
         $sector = Sector::query()->where('slug', 'senior-care')->firstOrFail();
 
-        return DB::transaction(function () use ($email, $organizationName, $legalName, $sector): array {
+        $result = DB::transaction(function () use ($request, $email, $organizationName, $legalName, $sector, $consentPayload): array {
             $user = User::query()->create([
                 'uuid' => (string) Str::uuid(),
                 'email' => Str::lower($email),
@@ -58,6 +69,15 @@ class B2bRegistrationService
                 'currency' => 'EUR',
             ]);
 
+            $this->companyProfileService->ensureProfileForCompany($company);
+
+            $this->consentLogService->recordB2bRegisterConsents(
+                $request,
+                $user,
+                $consentPayload['consent_text_hash'],
+                $consentPayload['policy_version'] ?? null,
+            );
+
             $token = $user->createToken('b2b-register')->plainTextToken;
 
             return [
@@ -66,5 +86,11 @@ class B2bRegistrationService
                 'token' => $token,
             ];
         });
+
+        Mail::to($result['user']->email)->queue(
+            new B2bWelcomeMail($result['user']->name ?? $organizationName),
+        );
+
+        return $result;
     }
 }

@@ -132,7 +132,10 @@ Apply layered limits (Redis-free — use Laravel `RateLimiter` with **cache driv
 | `auth-otp-request` | `POST .../otp/request` | **3 per 15 min** per email + IP | Matches frontend `MAX_SEND_ATTEMPTS` |
 | `auth-otp-verify` | `POST .../otp/verify` | 10/min per email | Brute-force protection |
 | `wizard-submit` | `POST .../leads` (anonymous) | 5/hour per IP | Abuse on public wizard |
-| `b2b-unlock` | `POST .../leads/{id}/unlock` | 30/min per company | Wallet operations |
+| `b2b-unlock` | `POST .../marketplace/leads/{id}/unlock` and legacy `POST .../leads/{id}/unlock` | 30/min per `company_id` (fallback `user_id`) | Registered in `AppServiceProvider`; `throttle:b2b-unlock` on both unlock routes |
+| `b2b-recharge` | `POST .../wallet/recharge` | 10/hour per `company_id` (fallback `user_id` → IP) | Registered in `AppServiceProvider`; `throttle:b2b-recharge` on recharge route |
+| `b2c-lead-results` | `GET .../b2c/leads/{uuid}/results` | 60/min per `uuid` + IP | Registered in `AppServiceProvider`; `throttle:b2c-lead-results` on results route |
+| `locations-autocomplete` | `GET .../b2c/locations/autocomplete` | 60/min per IP | Registered in `AppServiceProvider`; `throttle:locations-autocomplete` on autocomplete route |
 | `admin` | God Mode routes | 300/min per superadmin | Higher ceiling |
 
 Return **429** with standardized JSON (see §5). Include `Retry-After` header when applicable.

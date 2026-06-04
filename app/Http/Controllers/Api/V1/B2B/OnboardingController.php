@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\B2B;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\B2B\SubmitOnboardingRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Services\B2bOnboardingService;
 use Illuminate\Http\JsonResponse;
@@ -59,11 +60,21 @@ class OnboardingController extends Controller
         );
     }
 
-    public function submit(Request $request): JsonResponse
+    public function submit(SubmitOnboardingRequest $request): JsonResponse
     {
-        $company = $this->onboardingService->companyForUser($request->user());
+        $user = $request->user();
+        $company = $this->onboardingService->companyForUser($user);
+        $validated = $request->validated();
 
-        return ApiEnvelope::success($this->onboardingService->submit($company));
+        return ApiEnvelope::success($this->onboardingService->submit(
+            $company,
+            $request,
+            $user,
+            [
+                'terms_text_hash' => $validated['terms_text_hash'],
+                'policy_version' => $validated['policy_version'] ?? null,
+            ],
+        ));
     }
 
     public function status(Request $request): JsonResponse

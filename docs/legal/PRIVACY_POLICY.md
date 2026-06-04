@@ -19,8 +19,6 @@
 
 Il presente documento è stato redatto per **Julian Rovera**, operante con la denominazione commerciale **Wenando**, al fine di fornire agli interessati le informazioni prescritte dagli articoli 13 e 14 del Regolamento (UE) 2016/679 del Parlamento europeo e del Consiglio, del 27 aprile 2016, relativo alla protezione delle persone fisiche con riguardo al trattamento dei dati personali (di seguito, il **«GDPR»**), nonché dal decreto legislativo 30 giugno 2003, n. 196, recante il **Codice in materia di protezione dei dati personali**, come modificato dal decreto legislativo 10 agosto 2018, n. 101, in attuazione del GDPR (di seguito, congiuntamente al GDPR, la **«Normativa Privacy Applicabile»**).
 
-**Si raccomanda vivamente una revisione legale professionale da parte di un avvocato o consulente specializzato in privacy e protezione dei dati prima del go-live della Piattaforma e prima di ogni utilizzo del presente testo quale informativa vincolante verso gli interessati.** Il Titolare assume ogni responsabilità derivante dall'adozione del documento senza adeguata verifica legale.
-
 La presente Informativa integra e deve essere letta congiuntamente con la [Cookie Policy](./COOKIE_POLICY.md), con le [Condizioni Generali di Utilizzo B2C](./TERMS_B2C.md) e con le [Condizioni Generali di Piattaforma Partner B2B](./TERMS_B2B_PARTNERS.md), che disciplinano rispettivamente l'utilizzo di cookie e tecnologie analoghe, i rapporti con gli utenti consumatori e i rapporti con i partner commerciali.
 
 ---
@@ -801,12 +799,6 @@ L'eventuale invalidità o inefficacia di una o più disposizioni della presente 
 ### 21.3 Natura del documento
 
 La presente Informativa ha natura di **informativa privacy** ai sensi degli artt. 13 e 14 GDPR. Essa **non** costituisce, di per sé, contratto tra l'interessato e il Titolare, salvo ove espressamente integrata nelle [Condizioni Generali di Utilizzo B2C](./TERMS_B2C.md) o nelle [Condizioni Generali di Piattaforma Partner B2B](./TERMS_B2B_PARTNERS.md).
-
-### 21.4 Disclaimer — revisione legale obbligatoria consigliata
-
-**AVVERTENZA IMPORTANTE:** Il presente documento è stato redatto per **Julian Rovera**, operante con la denominazione commerciale **Wenando** (P.IVA IT13227980011), al fine di fornire un'informativa privacy strutturata e allineata al modello operativo della Piattaforma Wenando (Trust Engine Senior Care, marketplace B2B con mascheramento pre-unlock, Scenario A, retention 730/5/10 anni).
-
-**Il documento non costituisce consulenza legale** e **non** sostituisce il parere di un avvocato o consulente specializzato in protezione dei dati personali. **Si raccomanda vivamente una revisione legale professionale prima del go-live** e prima di ogni pubblicazione quale informativa vincolante verso gli interessati. Il Titolare assume ogni responsabilità derivante dall'utilizzo del testo senza adeguata verifica legale, inclusa la conformità settoriale (assistenza agli anziani, eventuali obblighi sanitari) e l'aggiornamento in caso di modifiche normative o operative.
 
 ---
 

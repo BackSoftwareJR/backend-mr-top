@@ -139,6 +139,41 @@ class LeadMarketplaceUnlockTest extends TestCase
         ]);
     }
 
+    public function test_crm_client_status_update_accepts_italian_label(): void
+    {
+        Sanctum::actingAs($this->partner);
+
+        $this->postJson('/api/v1/b2b/marketplace/leads/ML-'.$this->leadMatch->id.'/unlock')
+            ->assertOk();
+
+        $crmId = 'CRM-'.$this->leadMatch->id;
+
+        $response = $this->patchJson('/api/v1/b2b/crm/clients/'.$crmId, [
+            'stato' => 'Contattato',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('data.client.stato', 'Contattato')
+            ->assertJsonPath('data.client.ultima_azione', fn ($value) => is_string($value) && $value !== '');
+
+        $this->assertDatabaseHas('lead_matches', [
+            'id' => $this->leadMatch->id,
+            'crm_status' => CrmStatus::Contattato->value,
+        ]);
+    }
+
+    public function test_legacy_login_route_delegates_to_b2b_auth(): void
+    {
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'partner@struttura.it',
+            'password' => 'password123',
+        ]);
+
+        $response->assertOk()
+            ->assertJsonPath('success', true)
+            ->assertJsonStructure(['data' => ['token', 'user', 'company']]);
+    }
+
     public function test_marketplace_unlock_returns_insufficient_credits(): void
     {
         Wallet::query()->where('company_id', $this->company->id)->update([
@@ -150,7 +185,14 @@ class LeadMarketplaceUnlockTest extends TestCase
         $response = $this->postJson('/api/v1/b2b/leads/ML-'.$this->leadMatch->id.'/unlock');
 
         $response->assertStatus(402)
-            ->assertJsonPath('error.code', 'INSUFFICIENT_CREDITS');
+            ->assertJsonPath('success', false)
+            ->assertJsonPath('error.code', 'INSUFFICIENT_CREDITS')
+            ->assertJsonPath(
+                'error.message',
+                'Credito insufficiente. Ricarica il wallet per sbloccare il lead.',
+            )
+            ->assertJsonPath('error.details.required_credits', 15)
+            ->assertJsonPath('error.details.balance_credits', 10);
 
         $this->assertNull(LeadMatch::query()->find($this->leadMatch->id)?->unlocked_at);
     }
@@ -166,6 +208,7 @@ class LeadMarketplaceUnlockTest extends TestCase
             ->assertJsonPath('success', true)
             ->assertJsonPath('data.user.user_type', UserType::B2b->value)
             ->assertJsonPath('data.company.organization_name', 'Casa Serenità')
-            ->assertJsonStructure(['data' => ['token', 'user', 'company']]);
+            ->assertJsonPath('data.redirect_to', '/pro/dashboard')
+            ->assertJsonStructure(['data' => ['token', 'user', 'company', 'redirect_to']]);
     }
 }

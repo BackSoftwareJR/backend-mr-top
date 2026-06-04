@@ -11,16 +11,6 @@
 
 ---
 
-## AVVERTENZA PRELIMINARE — REVISIONE LEGALE PROFESSIONALE
-
-Le presenti Condizioni Generali di Piattaforma («**Condizioni**» o «**Contratto**») sono redatte in forma professionale per regolare il rapporto B2B tra il Fornitore e i Partner qualificati. **Non costituiscono consulenza legale** né sostituiscono l’assistenza di un avvocato o di un consulente specializzato.
-
-Il Partner è **fortemente invitato** a far revisionare il presente testo — nonché eventuali allegati, informative settoriali (sanitario, sociosanitario, antitrust, lavoro) e accordi privacy — da un professionista abilitato **prima** della sottoscrizione o dell’accettazione elettronica, in relazione alla propria forma giuridica, al settore operativo, alla dimensione aziendale e al territorio di esercizio.
-
-Il Fornitore declina ogni responsabilità per l’uso del Contratto senza adeguata verifica legale da parte del Partner. L’accettazione delle Condizioni implica che il Partner dichiara di aver compreso il contenuto e, ove del caso, di aver ottenuto consulenza professionale autonoma.
-
----
-
 ## INDICE
 
 1. [Parti, premesse e definizioni](#articolo-1--parti-premesse-e-definizioni)
@@ -959,8 +949,6 @@ Con l’accettazione elettronica o l’uso della Piattaforma B2B post-onboarding
 10. Operatività marketplace e unlock  
 
 ---
-
-*Le presenti Condizioni Generali di Piattaforma — Partner B2B (versione 1.0.0, Giugno 2026) non costituiscono consulenza legale. Il Partner è invitato a consultare un avvocato o consulente qualificato per adeguamenti settoriali (sanitario, sociosanitario, antitrust, fiscalità, lavoro, assicurazioni).*
 
 **Julian Rovera — Wenando**  
 [hola@wenando.com](mailto:hola@wenando.com) · [https://wenando.com](https://wenando.com) · **P.IVA IT13227980011**

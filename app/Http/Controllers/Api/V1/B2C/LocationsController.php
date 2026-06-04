@@ -6,28 +6,21 @@ namespace App\Http\Controllers\Api\V1\B2C;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Concerns\ApiEnvelope;
+use App\Services\ItalianCitiesAutocompleteService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class LocationsController extends Controller
 {
-    private const CITIES = [
-        ['label' => 'Milano (MI)', 'value' => 'milano-mi'],
-        ['label' => 'Roma (RM)', 'value' => 'roma-rm'],
-        ['label' => 'Torino (TO)', 'value' => 'torino-to'],
-        ['label' => 'Napoli (NA)', 'value' => 'napoli-na'],
-        ['label' => 'Bologna (BO)', 'value' => 'bologna-bo'],
-        ['label' => 'Firenze (FI)', 'value' => 'firenze-fi'],
-    ];
+    public function __construct(
+        private readonly ItalianCitiesAutocompleteService $cities,
+    ) {}
 
     public function autocomplete(Request $request): JsonResponse
     {
-        $q = strtolower((string) $request->query('q', ''));
-        $results = array_values(array_filter(
-            self::CITIES,
-            fn (array $city): bool => $q === '' || str_contains(strtolower($city['label']), $q),
-        ));
+        $query = (string) $request->query('q', '');
+        $suggestions = $this->cities->search($query);
 
-        return ApiEnvelope::success(['locations' => $results]);
+        return ApiEnvelope::success(['suggestions' => $suggestions]);
     }
 }

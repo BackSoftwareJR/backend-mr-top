@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\LeadStatus;
+use App\Http\Resources\V1\MatchResultResource;
 use App\Models\Lead;
 use App\Models\LeadMatch;
 use Illuminate\Database\Eloquent\Collection;
 
 class B2cLeadResultsService
 {
+    public function __construct(
+        private readonly AdvisorProfileService $advisorProfiles,
+    ) {}
+
     /**
      * @return array{status: string, match_count?: int}
      */
@@ -34,21 +39,12 @@ class B2cLeadResultsService
      */
     public function results(Lead $lead): array
     {
-        $matches = $lead->leadMatches()
-            ->with('company')
-            ->where('is_visible_to_consumer', true)
-            ->orderBy('rank')
-            ->get();
+        $matches = $this->consumerMatches($lead);
 
         return [
             'diagnosis' => $this->diagnosis($lead),
-            'matches' => $matches->map(fn (LeadMatch $m) => $this->formatConsumerMatch($m))->values()->all(),
-            'advisor' => [
-                'name' => 'Marco',
-                'role' => 'Consulente pari',
-                'story' => 'Ho affrontato la stessa scelta per mia madre. Posso aiutarti a capire le opzioni.',
-                'cta_label' => 'Prenota una chiamata gratuita',
-            ],
+            'matches' => MatchResultResource::collection($matches)->resolve(),
+            'advisor' => $this->advisorProfiles->defaultPayload(),
         ];
     }
 
@@ -57,8 +53,16 @@ class B2cLeadResultsService
      */
     public function matches(Lead $lead): Collection
     {
+        return $this->consumerMatches($lead);
+    }
+
+    /**
+     * @return Collection<int, LeadMatch>
+     */
+    private function consumerMatches(Lead $lead): Collection
+    {
         return $lead->leadMatches()
-            ->with('company')
+            ->with(['company.profile'])
             ->where('is_visible_to_consumer', true)
             ->orderBy('rank')
             ->get();
@@ -90,39 +94,6 @@ class B2cLeadResultsService
                 'secondary' => 'Centro diurno',
                 'summary' => 'Per persone autosufficienti bastano servizi flessibili a domicilio.',
             ],
-        };
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function formatConsumerMatch(LeadMatch $match): array
-    {
-        $company = $match->company;
-        $attrs = $company?->dynamic_attributes ?? [];
-
-        return [
-            'id' => (string) $match->id,
-            'company_id' => $company?->id,
-            'name' => $company?->organization_name ?? 'Partner',
-            'type' => $this->sectorLabel($attrs['sector'] ?? 'adi'),
-            'location' => $company?->city ?? '',
-            'compatibility' => $match->match_score,
-            'image_url' => null,
-            'description' => $attrs['notes'] ?? 'Struttura verificata Wenando.',
-            'pros' => ['Vetting completato', 'Trust score elevato'],
-            'contact_hint' => 'Registrati per salvare e contattare',
-        ];
-    }
-
-    private function sectorLabel(string $sector): string
-    {
-        return match ($sector) {
-            'rsa' => 'Residenza Sanitaria Assistenziale',
-            'adi' => 'Assistenza Domiciliare',
-            'centro' => 'Centro diurno',
-            'clinica' => 'Clinica / ambulatorio',
-            default => 'Assistenza Senior Care',
         };
     }
 }

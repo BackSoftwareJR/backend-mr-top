@@ -16,7 +16,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  * - user_type: consumer | b2b | superadmin
  * - onboarding_status: nullable string (future B2B onboarding state)
  *
- * Hidden: internal id, password, remember_token, phone (unless explicitly needed)
+ * Hidden: internal id, password, remember_token
  */
 class UserResource extends JsonResource
 {
@@ -32,6 +32,7 @@ class UserResource extends JsonResource
             'id' => $user->uuid,
             'email' => $user->email,
             'name' => $user->name,
+            'phone' => $user->phone,
             'user_type' => $user->user_type->value,
             'onboarding_status' => $user->onboarding_status,
         ];

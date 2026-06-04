@@ -4,8 +4,15 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\LeadMatch;
+
 final class MarketplaceRef
 {
+    public static function fromMatch(LeadMatch $match): string
+    {
+        return $match->public_ref ?? self::fromMatchId($match->id);
+    }
+
     public static function fromMatchId(int $leadMatchId): string
     {
         return 'ML-'.$leadMatchId;

@@ -1,8 +1,14 @@
 <?php
 
 use App\Exceptions\ApiException;
+use App\Http\Middleware\AssignRequestId;
+use App\Http\Middleware\HandleIdempotency;
+use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\RoleMiddleware;
+use App\Http\Middleware\SetSentryContext;
+use App\Http\Middleware\VerifyWenandoWebhookSecret;
 use App\Http\Responses\ApiErrorResponse;
+use App\Support\ApiRequestLogger;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -30,12 +36,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'idempotent' => HandleIdempotency::class,
+            'wenando.webhook' => VerifyWenandoWebhookSecret::class,
         ]);
 
         $middleware->statefulApi();
 
         $middleware->api(prepend: [
+            AssignRequestId::class,
+            SetSentryContext::class,
             ThrottleRequests::class.':api',
+        ]);
+
+        $middleware->api(append: [
+            LogApiRequest::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -142,6 +156,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 );
             }
 
+            ApiRequestLogger::logException($request, $e);
             report($e);
 
             return $apiRender(

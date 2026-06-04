@@ -29,7 +29,11 @@ class LeadMarketplaceController extends Controller
 
         $matches = $this->leadMarketplaceService->listCompatibleLeads($company, $unlockedOnly);
 
-        $leads = $matches->map(function ($match) {
+        $perPage = 20;
+        $page = max(1, (int) $request->input('page', 1));
+        $paginated = $matches->forPage($page, $perPage)->values();
+
+        $leads = $paginated->map(function ($match) {
             if ($match->unlocked_at !== null) {
                 return new LeadUnlockedResource($match);
             }
@@ -39,6 +43,13 @@ class LeadMarketplaceController extends Controller
 
         return ApiEnvelope::success([
             'leads' => $leads,
+        ], 200, [
+            'pagination' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total' => $matches->count(),
+                'last_page' => (int) max(1, ceil($matches->count() / $perPage)),
+            ],
         ]);
     }
 
@@ -46,7 +57,7 @@ class LeadMarketplaceController extends Controller
     {
         $company = $this->leadMarketplaceService->resolveCompanyForUser(Auth::user());
 
-        $result = $this->leadMarketplaceService->unlockLead($company, $id);
+        $result = $this->leadMarketplaceService->unlockLead($company, $id, $request->user(), $request);
 
         return ApiEnvelope::success([
             'lead' => new LeadUnlockedResource($result['lead_match']),

@@ -9,6 +9,7 @@ enum ConsentType: string
     case Marketing = 'marketing';
     case AnalyticsCookies = 'analytics_cookies';
     case LeadSharing = 'lead_sharing';
+    case TermsB2b = 'terms_b2b';
 
     /**
      * @return list<string>

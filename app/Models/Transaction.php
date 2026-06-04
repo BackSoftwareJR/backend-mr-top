@@ -46,6 +46,27 @@ class Transaction extends Model
     }
 
     /**
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?static
+    {
+        if ($field !== null) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        $query = static::query()
+            ->where('public_ref', $value)
+            ->orWhere('uuid', $value);
+
+        if (is_numeric($value)) {
+            $query->orWhere('id', (int) $value);
+        }
+
+        return $query->first();
+    }
+
+    /**
      * @return BelongsTo<Company, $this>
      */
     public function company(): BelongsTo

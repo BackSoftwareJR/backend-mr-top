@@ -27,15 +27,16 @@ class CrmClientResource extends JsonResource
         $lead = $match->lead;
 
         return [
-            'id' => MarketplaceRef::crmClientId($match->id),
+            'id' => $match->public_ref ?? MarketplaceRef::crmClientId($match->id),
             'cliente' => $lead->contact_name,
             'stato' => $this->crmStatusLabel($match->crm_status),
             'esigenza' => $lead->need_summary,
             'budget' => $this->formatBudget($lead),
+            'ultima_azione' => $this->ultimaAzione($match),
             'phone' => $lead->contact_phone,
             'email' => $lead->contact_email,
             'location' => $lead->location_label,
-            'marketplace_id' => MarketplaceRef::fromMatchId($match->id),
+            'marketplace_id' => $match->public_ref ?? MarketplaceRef::fromMatchId($match->id),
         ];
     }
 
@@ -58,6 +59,25 @@ class CrmClientResource extends JsonResource
             CrmStatus::VisitaFissata => 'Visita Fissata',
             CrmStatus::Perso => 'Perso',
             CrmStatus::Chiuso => 'Chiuso',
+        };
+    }
+
+    private function ultimaAzione(LeadMatch $match): string
+    {
+        $timestamp = $match->updated_at ?? $match->unlocked_at;
+
+        if ($timestamp === null) {
+            return '—';
+        }
+
+        $date = $timestamp->locale('it')->isoFormat('D MMM');
+
+        return match ($match->crm_status) {
+            CrmStatus::Contattato => "Contattato · {$date}",
+            CrmStatus::VisitaFissata => "Visita fissata · {$date}",
+            CrmStatus::Perso => "Perso · {$date}",
+            CrmStatus::Chiuso => "Chiuso · {$date}",
+            default => "Lead sbloccato · {$date}",
         };
     }
 }

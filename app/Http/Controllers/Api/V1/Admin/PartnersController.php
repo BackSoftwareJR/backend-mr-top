@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\Admin\ImpersonatePartnerRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Http\Resources\V1\CompanyResource;
 use App\Models\Company;
@@ -44,17 +45,22 @@ class PartnersController extends Controller
     public function suspend(Request $request, Company $company): JsonResponse
     {
         $validated = $request->validate(['reason' => ['nullable', 'string', 'max:2000']]);
-        $company = $this->adminOps->suspend($company, $validated['reason'] ?? null);
+        $company = $this->adminOps->suspend(
+            $company,
+            $request->user(),
+            $validated['reason'] ?? null,
+            $request,
+        );
 
         return ApiEnvelope::success([
             'company' => new CompanyResource($company),
         ]);
     }
 
-    public function impersonate(Request $request, Company $company): JsonResponse
+    public function impersonate(ImpersonatePartnerRequest $request, Company $company): JsonResponse
     {
         return ApiEnvelope::success(
-            $this->adminOps->impersonate($company, $request->user()),
+            $this->adminOps->impersonate($company, $request->user(), $request),
         );
     }
 }

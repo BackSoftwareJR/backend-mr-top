@@ -6,7 +6,6 @@ namespace App\Services;
 
 use App\Enums\OtpPortal;
 use App\Enums\UserType;
-use App\Enums\VettingStatus;
 use App\Exceptions\ApiException;
 use App\Mail\OtpMail;
 use App\Models\OtpCode;
@@ -209,16 +208,10 @@ class OtpAuthService
     private function b2bRedirect(User $user): string
     {
         $company = $user->companies()->first();
-        $status = $company?->vetting_status;
-
-        if ($status === VettingStatus::Approved) {
-            return '/pro/dashboard';
-        }
-
-        if ($status === VettingStatus::PendingReview) {
+        if ($company === null) {
             return '/pro/onboarding';
         }
 
-        return '/pro/onboarding';
+        return app(B2bOnboardingService::class)->redirectForVettingStatus($company->vetting_status);
     }
 }

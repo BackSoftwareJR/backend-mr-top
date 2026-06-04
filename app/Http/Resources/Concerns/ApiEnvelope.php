@@ -30,9 +30,18 @@ final class ApiEnvelope
             'success' => true,
             'data' => $resolved,
             'meta' => array_merge(
-                ['request_id' => (string) (request()->header('X-Request-Id') ?? Str::ulid())],
+                ['request_id' => self::requestId()],
                 $meta,
             ),
         ], $status);
+    }
+
+    public static function requestId(): string
+    {
+        $id = request()->attributes->get('request_id');
+
+        return is_string($id) && $id !== ''
+            ? $id
+            : (string) Str::ulid();
     }
 }

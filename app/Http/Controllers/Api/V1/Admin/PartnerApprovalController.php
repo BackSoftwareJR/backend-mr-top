@@ -11,6 +11,7 @@ use App\Http\Resources\V1\CompanyResource;
 use App\Models\Company;
 use App\Services\PartnerApprovalService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class PartnerApprovalController extends Controller
 {
@@ -18,9 +19,13 @@ class PartnerApprovalController extends Controller
         private readonly PartnerApprovalService $partnerApprovalService,
     ) {}
 
-    public function approve(Company $company): JsonResponse
+    public function approve(Request $request, Company $company): JsonResponse
     {
-        $company = $this->partnerApprovalService->approve($company);
+        $company = $this->partnerApprovalService->approve(
+            $company,
+            $request->user(),
+            $request,
+        );
 
         return ApiEnvelope::success([
             'company' => new CompanyResource($company),
@@ -31,7 +36,9 @@ class PartnerApprovalController extends Controller
     {
         $company = $this->partnerApprovalService->reject(
             $company,
+            $request->user(),
             $request->input('reason'),
+            $request,
         );
 
         return ApiEnvelope::success([

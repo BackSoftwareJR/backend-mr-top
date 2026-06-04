@@ -11,12 +11,17 @@ use App\Models\Company;
 use App\Models\CompanyDocument;
 use App\Models\TrustTest;
 use App\Models\User;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class B2bOnboardingService
 {
+    public function __construct(
+        private readonly ConsentLogService $consentLogService,
+    ) {}
+
     /**
      * @return array{status: string, step: int, data: array<string, mixed>}
      */
@@ -107,34 +112,59 @@ class B2bOnboardingService
         ];
     }
 
-    public function submit(Company $company): array
+    /**
+     * @param  array{terms_text_hash: string, policy_version?: string|null}  $consentPayload
+     */
+    public function submit(Company $company, Request $request, User $user, array $consentPayload): array
     {
-        $company->update(['vetting_status' => VettingStatus::PendingReview]);
+        return DB::transaction(function () use ($company, $request, $user, $consentPayload): array {
+            $this->consentLogService->recordB2bOnboardingSubmitConsents(
+                $request,
+                $user,
+                $consentPayload['terms_text_hash'],
+                $consentPayload['policy_version'] ?? null,
+            );
 
-        $trust = $company->trustTests()->latest()->first();
-        if ($trust !== null) {
-            $trust->update([
-                'status' => TrustTestStatus::Submitted,
-                'submitted_at' => now(),
-            ]);
-        }
+            $company->update(['vetting_status' => VettingStatus::PendingReview]);
 
-        return ['status' => VettingStatus::PendingReview->value];
+            $trust = $company->trustTests()->latest()->first();
+            if ($trust !== null) {
+                $trust->update([
+                    'status' => TrustTestStatus::Submitted,
+                    'submitted_at' => now(),
+                ]);
+            }
+
+            return ['status' => VettingStatus::PendingReview->value];
+        });
     }
 
     /**
-     * @return array{status: string, redirect_to: string}
+     * @return array{status: string, onboarding_complete: bool, redirect_to: string, rejection_reason?: string|null}
      */
     public function status(Company $company): array
     {
-        return [
-            'status' => $company->vetting_status->value,
-            'redirect_to' => match ($company->vetting_status) {
-                VettingStatus::Approved => '/pro/dashboard',
-                VettingStatus::PendingReview => '/pro/onboarding',
-                default => '/pro/onboarding',
-            },
+        $vettingStatus = $company->vetting_status;
+
+        $payload = [
+            'status' => $vettingStatus->value,
+            'onboarding_complete' => $vettingStatus === VettingStatus::Approved,
+            'redirect_to' => $this->redirectForVettingStatus($vettingStatus),
         ];
+
+        if ($vettingStatus === VettingStatus::Rejected) {
+            $payload['rejection_reason'] = $company->rejection_reason;
+        }
+
+        return $payload;
+    }
+
+    public function redirectForVettingStatus(VettingStatus $vettingStatus): string
+    {
+        return match ($vettingStatus) {
+            VettingStatus::Approved => '/pro/dashboard',
+            default => '/pro/onboarding',
+        };
     }
 
     public function companyForUser(User $user): Company

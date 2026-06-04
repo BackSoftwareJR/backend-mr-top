@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Enums\CompanyTier;
 use App\Enums\VettingStatus;
 use App\Models\Concerns\GeneratesUuid;
+use Database\Factories\CompanyFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -31,7 +33,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 ])]
 class Company extends Model
 {
-    use GeneratesUuid, SoftDeletes;
+    /** @use HasFactory<CompanyFactory> */
+    use GeneratesUuid, HasFactory, SoftDeletes;
 
     /**
      * @return array<string, string>
@@ -113,6 +116,14 @@ class Company extends Model
     public function leadMatches(): HasMany
     {
         return $this->hasMany(LeadMatch::class);
+    }
+
+    /**
+     * @return HasOne<CompanyProfile, $this>
+     */
+    public function profile(): HasOne
+    {
+        return $this->hasOne(CompanyProfile::class);
     }
 
     /**

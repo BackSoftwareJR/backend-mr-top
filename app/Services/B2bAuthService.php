@@ -12,8 +12,12 @@ use Illuminate\Validation\ValidationException;
 
 class B2bAuthService
 {
+    public function __construct(
+        private readonly B2bOnboardingService $b2bOnboardingService,
+    ) {}
+
     /**
-     * @return array{token: string, user: User, company: Company|null}
+     * @return array{token: string, user: User, company: Company|null, redirect_to: string}
      */
     public function login(string $email, string $password, string $deviceName = 'b2b-api'): array
     {
@@ -40,6 +44,9 @@ class B2bAuthService
             'token' => $token,
             'user' => $user,
             'company' => $company,
+            'redirect_to' => $company !== null
+                ? $this->b2bOnboardingService->redirectForVettingStatus($company->vetting_status)
+                : '/pro/onboarding',
         ];
     }
 }

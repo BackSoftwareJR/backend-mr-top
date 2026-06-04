@@ -11,6 +11,7 @@ use App\Models\Lead;
 use App\Models\Sector;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class LeadSubmissionService
 {
@@ -24,6 +25,8 @@ class LeadSubmissionService
             $validated = $request->validated();
             $payload = $validated['payload'];
             $sector = Sector::query()->where('slug', $validated['sector_slug'])->firstOrFail();
+            $needSummary = $this->buildNeedSummary($payload['autonomy']);
+            $contactEmail = $this->normalizeContactEmail($payload['contact']['email'] ?? null);
 
             $lead = Lead::query()->create([
                 'sector_id' => $sector->id,
@@ -32,10 +35,12 @@ class LeadSubmissionService
                 'payload' => $payload,
                 'contact_name' => $payload['contact']['nome'],
                 'contact_phone' => $payload['contact']['telefono'],
+                'contact_email' => $contactEmail,
                 'location_label' => $payload['location']['label'],
                 'budget_min' => $payload['budget']['min'],
                 'budget_max' => $payload['budget']['max'],
-                'need_summary' => $this->buildNeedSummary($payload['autonomy']),
+                'need_summary' => $needSummary,
+                'title' => $this->buildSearchTitle($sector->name, $needSummary),
             ]);
 
             $lead->update([
@@ -55,6 +60,17 @@ class LeadSubmissionService
         });
     }
 
+    private function normalizeContactEmail(mixed $email): ?string
+    {
+        if (! is_string($email)) {
+            return null;
+        }
+
+        $trimmed = trim($email);
+
+        return $trimmed === '' ? null : Str::lower($trimmed);
+    }
+
     private function buildNeedSummary(string $autonomy): string
     {
         return match ($autonomy) {
@@ -63,5 +79,12 @@ class LeadSubmissionService
             'non-autosufficiente' => 'Assistenza per persona non autosufficiente',
             default => 'Richiesta assistenza senior care',
         };
+    }
+
+    private function buildSearchTitle(string $sectorName, string $needSummary): string
+    {
+        $title = sprintf('%s · %s', $sectorName, $needSummary);
+
+        return mb_strlen($title) > 255 ? mb_substr($title, 0, 252).'…' : $title;
     }
 }

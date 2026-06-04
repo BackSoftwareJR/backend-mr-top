@@ -12,6 +12,20 @@ use Illuminate\Validation\Validator;
 
 class StoreLeadRequest extends FormRequest
 {
+    protected function prepareForValidation(): void
+    {
+        $payload = $this->input('payload');
+        if (! is_array($payload) || ! is_array($payload['contact'] ?? null)) {
+            return;
+        }
+
+        $email = $payload['contact']['email'] ?? null;
+        if (is_string($email) && trim($email) === '') {
+            unset($payload['contact']['email']);
+            $this->merge(['payload' => $payload]);
+        }
+    }
+
     public function authorize(): bool
     {
         return true;
@@ -51,11 +65,15 @@ class StoreLeadRequest extends FormRequest
                 'max:32',
                 'regex:/^\+?[0-9\s\-]{8,32}$/',
             ],
+            'payload.contact.email' => ['sometimes', 'nullable', 'email', 'max:255'],
             'consent' => ['required', 'array'],
             'consent.privacy_accepted' => ['required', 'accepted'],
             'consent.terms_accepted' => ['required', 'accepted'],
+            'consent.lead_sharing_accepted' => ['required', 'accepted'],
             'consent.marketing_accepted' => ['sometimes', 'boolean'],
             'consent_text_hash' => ['required', 'string', 'size:64', 'regex:/^[a-f0-9]{64}$/'],
+            'terms_text_hash' => ['sometimes', 'string', 'size:64', 'regex:/^[a-f0-9]{64}$/'],
+            'lead_sharing_text_hash' => ['sometimes', 'string', 'size:64', 'regex:/^[a-f0-9]{64}$/'],
             'policy_version' => ['sometimes', 'string', 'regex:/^\d+\.\d+\.\d+$/', 'max:20'],
             'session_id' => ['nullable', 'string', 'max:64'],
         ];
@@ -85,7 +103,11 @@ class StoreLeadRequest extends FormRequest
             );
             $consentLogService = app(ConsentLogService::class);
 
-            foreach ([ConsentType::PrivacyPolicy, ConsentType::TermsB2c] as $consentType) {
+            foreach ([
+                ConsentType::PrivacyPolicy,
+                ConsentType::TermsB2c,
+                ConsentType::LeadSharing,
+            ] as $consentType) {
                 if (! $consentLogService->hasValidConsent(
                     $consentType,
                     $this->user()?->id,
@@ -94,7 +116,7 @@ class StoreLeadRequest extends FormRequest
                 )) {
                     $validator->errors()->add(
                         'consent',
-                        'Registra i consensi privacy e Condizioni B2C prima di inviare la richiesta.',
+                        'Registra i consensi privacy, Condizioni B2C e condivisione partner prima di inviare la richiesta.',
                     );
 
                     break;
@@ -129,7 +151,11 @@ class StoreLeadRequest extends FormRequest
             'consent.privacy_accepted.accepted' => 'Devi accettare l\'informativa privacy per inviare la richiesta.',
             'consent.terms_accepted.required' => 'Devi accettare le Condizioni Generali B2C per inviare la richiesta.',
             'consent.terms_accepted.accepted' => 'Devi accettare le Condizioni Generali B2C per inviare la richiesta.',
+            'consent.lead_sharing_accepted.required' => 'Devi acconsentire alla condivisione con i partner per inviare la richiesta.',
+            'consent.lead_sharing_accepted.accepted' => 'Devi acconsentire alla condivisione con i partner per inviare la richiesta.',
             'consent_text_hash.required' => 'Hash del testo consenso obbligatorio.',
+            'terms_text_hash.regex' => 'Hash del testo Condizioni B2C non valido.',
+            'lead_sharing_text_hash.regex' => 'Hash del testo condivisione partner non valido.',
             'consent_text_hash.regex' => 'Hash del testo consenso non valido.',
         ];
     }

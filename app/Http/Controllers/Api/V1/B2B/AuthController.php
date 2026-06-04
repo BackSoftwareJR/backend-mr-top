@@ -33,6 +33,7 @@ class AuthController extends Controller
             'company' => $result['company'] !== null
                 ? new CompanyResource($result['company'])
                 : null,
+            'redirect_to' => $result['redirect_to'],
         ], Response::HTTP_OK);
     }
 }

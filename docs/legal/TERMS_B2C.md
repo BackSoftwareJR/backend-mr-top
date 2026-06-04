@@ -723,12 +723,6 @@ Ai fini delle presenti Condizioni, i termini di seguito indicati avranno il sign
 
 ---
 
-## DICHIARAZIONE DI NON CONSULENZA LEGALE
-
-*Le presenti Condizioni Generali di Utilizzo sono state redatte sulla base delle specifiche tecniche, del modello di business e del piano di conformità della Piattaforma Wenando. **Non costituiscono consulenza legale** né sostituiscono il parere di un avvocato o di un professionista qualificato. Il Fornitore raccomanda la **revisione legale professionale** da parte di un legale abilitato prima dell'utilizzo in produzione, in particolare per quanto concerne clausole di limitazione di responsabilità, conformità al Codice del Consumo, applicabilità della normativa sui contenuti digitali e adeguatezza delle informative precontrattuali.*
-
----
-
 **Julian Rovera — Wenando**  
 [hola@wenando.com](mailto:hola@wenando.com) · [https://wenando.com](https://wenando.com) · P.IVA IT13227980011
 

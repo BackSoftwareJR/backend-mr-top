@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'company_id',
     'lead_match_id',
     'user_id',
+    'lead_id',
     'client_name',
     'scheduled_date',
     'scheduled_time',
@@ -55,5 +56,13 @@ class Appointment extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * @return BelongsTo<Lead, $this>
+     */
+    public function lead(): BelongsTo
+    {
+        return $this->belongsTo(Lead::class);
     }
 }

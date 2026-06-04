@@ -26,7 +26,7 @@ class LeadUnlockedResource extends JsonResource
         $lead = $match->lead;
 
         return [
-            'id' => MarketplaceRef::fromMatchId($match->id),
+            'id' => MarketplaceRef::fromMatch($match),
             'match_score' => $match->match_score,
             'budget' => $this->formatBudget($lead),
             'location' => $lead->location_label,

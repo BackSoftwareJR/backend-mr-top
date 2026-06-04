@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\DB;
 
 class WalletService
 {
+    public function __construct(
+        private readonly ActivityFeedService $activityFeedService,
+    ) {}
+
     public function getOrCreateWallet(Company $company): Wallet
     {
         return Wallet::query()->firstOrCreate(
@@ -115,6 +119,8 @@ class WalletService
                 'description' => $description ?? 'Ricarica crediti',
                 'completed_at' => now(),
             ]);
+
+            $this->activityFeedService->recordWalletRecharge($company, $transaction);
 
             return [
                 'wallet' => $wallet->fresh(),

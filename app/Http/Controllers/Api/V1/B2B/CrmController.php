@@ -45,6 +45,8 @@ class CrmController extends Controller
             $company,
             $id,
             $request->crmStatus(),
+            $request->user(),
+            $request,
         );
 
         return ApiEnvelope::success([

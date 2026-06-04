@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\AuditAction;
 use App\Enums\CrmStatus;
 use App\Enums\TransactionType;
 use App\Enums\VettingStatus;
@@ -15,6 +16,7 @@ use App\Models\User;
 use App\Models\Wallet;
 use App\Support\MarketplaceRef;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class LeadMarketplaceService
@@ -23,6 +25,8 @@ class LeadMarketplaceService
 
     public function __construct(
         private readonly WalletService $walletService,
+        private readonly AuditLogService $auditLogService,
+        private readonly ActivityFeedService $activityFeedService,
     ) {}
 
     /**
@@ -53,17 +57,27 @@ class LeadMarketplaceService
     /**
      * @return array{lead_match: LeadMatch, wallet: Wallet}
      */
-    public function unlockLead(Company $company, string $marketplaceRef): array
-    {
+    public function unlockLead(
+        Company $company,
+        string $marketplaceRef,
+        User $actor,
+        ?Request $request = null,
+    ): array {
         $this->assertPartnerApproved($company);
 
         $matchId = MarketplaceRef::parseMatchId($marketplaceRef);
 
         if ($matchId === null) {
-            abort(404, 'Lead marketplace non trovato.');
+            $leadMatch = LeadMatch::findByExternalRef($marketplaceRef);
+
+            if ($leadMatch === null) {
+                abort(404, 'Lead marketplace non trovato.');
+            }
+
+            $matchId = $leadMatch->id;
         }
 
-        return DB::transaction(function () use ($company, $matchId): array {
+        return DB::transaction(function () use ($company, $matchId, $actor, $request): array {
             $leadMatch = LeadMatch::query()
                 ->with('lead')
                 ->where('company_id', $company->id)
@@ -82,13 +96,38 @@ class LeadMarketplaceService
                 $cost,
                 TransactionType::LeadUnlock,
                 $leadMatch->id,
-                'Sblocco lead '.(MarketplaceRef::fromMatchId($leadMatch->id)),
+                'Sblocco lead '.MarketplaceRef::fromMatch($leadMatch),
             );
 
             $leadMatch->forceFill([
                 'unlocked_at' => now(),
                 'crm_status' => $leadMatch->crm_status ?? CrmStatus::Nuovo,
             ])->save();
+
+            $metadata = [
+                'company_id' => $company->id,
+                'lead_match_id' => $leadMatch->id,
+                'credits_debited' => $cost,
+            ];
+
+            $idempotencyKey = $request?->header('Idempotency-Key');
+            if (is_string($idempotencyKey) && $idempotencyKey !== '') {
+                $metadata['idempotency_key'] = $idempotencyKey;
+            }
+
+            $this->auditLogService->record(
+                AuditAction::LeadUnlocked,
+                $actor,
+                $leadMatch,
+                $metadata,
+                $request,
+            );
+
+            $this->activityFeedService->recordLeadUnlock(
+                $company,
+                $leadMatch,
+                $result['transaction'],
+            );
 
             return [
                 'lead_match' => $leadMatch->fresh(['lead']),

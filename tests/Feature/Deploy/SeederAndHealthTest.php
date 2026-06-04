@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Deploy;
 
+use App\Enums\LeadStatus;
+use App\Enums\UserType;
+use App\Enums\VettingStatus;
 use App\Models\Sector;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -29,6 +33,62 @@ class SeederAndHealthTest extends TestCase
 
         $this->assertDatabaseHas('roles', ['name' => 'consumer']);
         $this->assertDatabaseHas('roles', ['name' => 'super_admin']);
+    }
+
+    public function test_database_seeder_creates_dev_users_idempotently(): void
+    {
+        $this->seed(DatabaseSeeder::class);
+        $this->seed(DatabaseSeeder::class);
+
+        $superadminEmail = env('SEED_SUPERADMIN_EMAIL', 'admin@wenando.test');
+
+        $this->assertDatabaseHas('users', [
+            'email' => $superadminEmail,
+            'user_type' => UserType::Superadmin->value,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'consumer@wenando.test',
+            'user_type' => UserType::Consumer->value,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'partner@care.it',
+            'user_type' => UserType::B2b->value,
+        ]);
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'partner-pending@wenando.test',
+            'user_type' => UserType::B2b->value,
+        ]);
+
+        $this->assertDatabaseHas('leads', [
+            'public_ref' => 'LD-SEED-CONSUMER',
+            'status' => LeadStatus::Routed->value,
+        ]);
+
+        $this->assertDatabaseHas('companies', [
+            'organization_name' => 'Care Partner Italia',
+            'vetting_status' => VettingStatus::Approved->value,
+        ]);
+
+        $this->assertDatabaseHas('companies', [
+            'organization_name' => 'Residenza In Attesa',
+            'vetting_status' => VettingStatus::PendingReview->value,
+        ]);
+
+        $approvedPartner = User::query()->where('email', 'partner@care.it')->firstOrFail();
+        $companyId = $approvedPartner->companies()->firstOrFail()->id;
+
+        $this->assertDatabaseHas('company_profiles', [
+            'company_id' => $companyId,
+            'display_name' => 'Care Partner Italia',
+        ]);
+
+        $this->assertDatabaseHas('wallets', [
+            'company_id' => $companyId,
+            'balance_credits' => 150,
+        ]);
     }
 
     public function test_health_endpoint_returns_ok_envelope(): void

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->enum('consent_type', [
                 'privacy_policy',
                 'terms_b2c',
+                'terms_b2b',
                 'marketing',
                 'analytics_cookies',
                 'lead_sharing',

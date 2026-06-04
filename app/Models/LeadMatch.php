@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CrmStatus;
+use App\Support\MarketplaceRef;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'lead_id',
     'company_id',
+    'public_ref',
     'match_score',
     'rank',
     'is_visible_to_consumer',
@@ -25,6 +27,59 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class LeadMatch extends Model
 {
     use SoftDeletes;
+
+    protected static function booted(): void
+    {
+        static::created(function (LeadMatch $match): void {
+            if ($match->public_ref !== null) {
+                return;
+            }
+
+            $match->forceFill([
+                'public_ref' => sprintf('ML-%d', $match->id),
+            ])->saveQuietly();
+        });
+    }
+
+    /**
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?static
+    {
+        if ($field !== null) {
+            return parent::resolveRouteBinding($value, $field);
+        }
+
+        return static::findByExternalRef((string) $value);
+    }
+
+    public static function findByExternalRef(string $ref): ?static
+    {
+        if ($ref === '') {
+            return null;
+        }
+
+        $byPublicRef = static::query()->where('public_ref', $ref)->first();
+
+        if ($byPublicRef !== null) {
+            return $byPublicRef;
+        }
+
+        $matchId = MarketplaceRef::parseMatchId($ref);
+
+        if ($matchId !== null) {
+            return static::query()->find($matchId);
+        }
+
+        $crmId = MarketplaceRef::parseCrmClientId($ref);
+
+        if ($crmId !== null) {
+            return static::query()->find($crmId);
+        }
+
+        return null;
+    }
 
     /**
      * @return array<string, string>

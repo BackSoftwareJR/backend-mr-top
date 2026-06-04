@@ -19,6 +19,8 @@ return [
     'allowed_origins' => [
         'http://localhost:5173',
         'http://127.0.0.1:5173',
+        'http://localhost:4173',
+        'http://127.0.0.1:4173',
         'https://wenando.com',
         'https://www.wenando.com',
     ],
@@ -31,6 +33,7 @@ return [
         'X-Requested-With',
         'Accept',
         'X-XSRF-TOKEN',
+        'X-Request-Id',
     ],
 
     'exposed_headers' => [],

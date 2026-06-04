@@ -757,11 +757,9 @@ In caso di **modifiche sostanziali** (es. introduzione cookie marketing, cambio 
 
 ---
 
-## 21. Disclaimer
+## 21. Aggiornamenti
 
 **La presente Cookie Policy è redatta per fornire un'informativa trasparente e completa sull'utilizzo di cookie e tecnologie simili da parte di Wenando, in conformità al quadro normativo vigente al momento della redazione (Giugno 2026).**
-
-**Non costituisce consulenza legale.** Il Titolare raccomanda di sottoporre il testo a **revisione da parte di un legale qualificato** prima della pubblicazione definitiva o in caso di modifiche sostanziali dell'architettura tecnica, dell'elenco dei fornitori o delle finalità di trattamento.
 
 Eventuali incongruenze tra implementazione tecnica e testo normativo devono essere segnalate a [hola@wenando.com](mailto:hola@wenando.com) per tempestivo aggiornamento documentale.
 

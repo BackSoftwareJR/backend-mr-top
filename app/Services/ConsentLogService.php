@@ -29,18 +29,40 @@ class ConsentLogService
             ?? config('wenando.privacy_policy_version', '1.0.0');
         $sessionId = $this->resolveSessionId($request, $validated['session_id'] ?? null);
 
-        $consents = [[
-            'consent_type' => ConsentType::PrivacyPolicy->value,
-            'policy_version' => $policyVersion,
-            'consent_given' => true,
-            'consent_text_hash' => $validated['consent_text_hash'],
-            'session_id' => $sessionId,
-            'lead_uuid' => $lead->uuid,
-            'metadata' => [
-                'source' => 'b2c_lead_submission',
-                'sector_slug' => $validated['sector_slug'],
+        $metadata = [
+            'source' => 'b2c_lead_submission',
+            'sector_slug' => $validated['sector_slug'],
+        ];
+
+        $consents = [
+            [
+                'consent_type' => ConsentType::PrivacyPolicy->value,
+                'policy_version' => $policyVersion,
+                'consent_given' => true,
+                'consent_text_hash' => $validated['consent_text_hash'],
+                'session_id' => $sessionId,
+                'lead_uuid' => $lead->uuid,
+                'metadata' => $metadata,
             ],
-        ]];
+            [
+                'consent_type' => ConsentType::TermsB2c->value,
+                'policy_version' => $policyVersion,
+                'consent_given' => true,
+                'consent_text_hash' => $validated['terms_text_hash'] ?? $validated['consent_text_hash'],
+                'session_id' => $sessionId,
+                'lead_uuid' => $lead->uuid,
+                'metadata' => $metadata,
+            ],
+            [
+                'consent_type' => ConsentType::LeadSharing->value,
+                'policy_version' => $policyVersion,
+                'consent_given' => true,
+                'consent_text_hash' => $validated['lead_sharing_text_hash'] ?? $validated['consent_text_hash'],
+                'session_id' => $sessionId,
+                'lead_uuid' => $lead->uuid,
+                'metadata' => $metadata,
+            ],
+        ];
 
         if (($validated['consent']['marketing_accepted'] ?? false) === true) {
             $consents[] = [
@@ -55,6 +77,118 @@ class ConsentLogService
         }
 
         return $this->recordConsents($consents, $request, $user);
+    }
+
+    /**
+     * Record privacy policy acceptance at B2B partner registration.
+     *
+     * @return list<ConsentLog>
+     */
+    public function recordB2bRegisterConsents(
+        Request $request,
+        User $user,
+        string $consentTextHash,
+        ?string $policyVersion = null,
+    ): array {
+        $version = $policyVersion
+            ?? config('wenando.privacy_policy_version', '1.0.0');
+
+        return $this->recordConsents([
+            [
+                'consent_type' => ConsentType::PrivacyPolicy->value,
+                'policy_version' => $version,
+                'consent_given' => true,
+                'consent_text_hash' => $consentTextHash,
+                'session_id' => $this->resolveSessionId($request),
+                'metadata' => ['source' => 'b2b_register'],
+            ],
+        ], $request, $user);
+    }
+
+    /**
+     * Record authenticated user preference changes (marketing / analytics cookies).
+     *
+     * @param  list<array{
+     *     consent_type: string,
+     *     policy_version: string,
+     *     consent_given: bool,
+     *     consent_text_hash: string
+     * }>  $preferences
+     * @return list<ConsentLog>
+     */
+    public function recordConsentPreferences(
+        Request $request,
+        User $user,
+        array $preferences,
+    ): array {
+        $consents = [];
+
+        foreach ($preferences as $preference) {
+            $consents[] = [
+                'consent_type' => $preference['consent_type'],
+                'policy_version' => $preference['policy_version'],
+                'consent_given' => $preference['consent_given'],
+                'consent_text_hash' => $preference['consent_text_hash'],
+                'session_id' => $this->resolveSessionId($request),
+                'metadata' => ['source' => 'user_preferences'],
+            ];
+        }
+
+        return $this->recordConsents($consents, $request, $user);
+    }
+
+    /**
+     * Record B2B partner terms acceptance at onboarding submit.
+     *
+     * @return list<ConsentLog>
+     */
+    public function recordB2bOnboardingSubmitConsents(
+        Request $request,
+        User $user,
+        string $termsTextHash,
+        ?string $policyVersion = null,
+    ): array {
+        $version = $policyVersion
+            ?? config('wenando.terms_b2b_version', '1.0.0');
+
+        return $this->recordConsents([
+            [
+                'consent_type' => ConsentType::TermsB2b->value,
+                'policy_version' => $version,
+                'consent_given' => true,
+                'consent_text_hash' => $termsTextHash,
+                'session_id' => $this->resolveSessionId($request),
+                'metadata' => ['source' => 'b2b_onboarding_submit'],
+            ],
+        ], $request, $user);
+    }
+
+    /**
+     * Record analytics cookie preference from the public cookie banner.
+     *
+     * @return list<ConsentLog>
+     */
+    public function recordAnalyticsCookieConsent(
+        Request $request,
+        bool $consentGiven,
+        string $consentTextHash,
+        ?string $sessionId = null,
+        ?string $policyVersion = null,
+        ?User $user = null,
+    ): array {
+        $version = $policyVersion
+            ?? config('wenando.cookie_policy_version', '1.0.0');
+
+        return $this->recordConsents([
+            [
+                'consent_type' => ConsentType::AnalyticsCookies->value,
+                'policy_version' => $version,
+                'consent_given' => $consentGiven,
+                'consent_text_hash' => $consentTextHash,
+                'session_id' => $sessionId ?? $this->resolveSessionId($request),
+                'metadata' => ['source' => 'cookie_banner'],
+            ],
+        ], $request, $user);
     }
 
     /**

@@ -49,8 +49,10 @@ class OtpAuthTest extends TestCase
 
         $verify->assertOk()
             ->assertJsonPath('data.user.user_type', 'consumer')
+            ->assertJsonPath('data.user.name', 'consumer')
+            ->assertJsonPath('data.user.phone', null)
             ->assertJsonPath('data.redirect_to', '/user')
-            ->assertJsonStructure(['data' => ['token', 'user']]);
+            ->assertJsonStructure(['data' => ['token', 'user' => ['id', 'email', 'name', 'phone', 'user_type']]]);
 
         $this->assertDatabaseHas('users', [
             'email' => 'consumer@example.com',
@@ -63,13 +65,17 @@ class OtpAuthTest extends TestCase
         $user = User::factory()->create([
             'user_type' => UserType::Consumer,
             'email' => 'me@example.com',
+            'name' => 'Mario Rossi',
+            'phone' => '+39 333 111 2222',
         ]);
 
         Sanctum::actingAs($user);
 
         $this->getJson('/api/v1/auth/me')
             ->assertOk()
-            ->assertJsonPath('data.user.email', 'me@example.com');
+            ->assertJsonPath('data.user.email', 'me@example.com')
+            ->assertJsonPath('data.user.name', 'Mario Rossi')
+            ->assertJsonPath('data.user.phone', '+39 333 111 2222');
 
         $this->postJson('/api/v1/auth/logout')
             ->assertOk()

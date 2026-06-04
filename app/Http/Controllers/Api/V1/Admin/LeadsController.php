@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\Admin\AssignLeadRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Models\Lead;
 use App\Services\AdminOperationsService;
@@ -57,17 +58,19 @@ class LeadsController extends Controller
         ]);
     }
 
-    public function assign(Request $request, int $id): JsonResponse
+    public function assign(AssignLeadRequest $request, int $id): JsonResponse
     {
-        $validated = $request->validate([
-            'partner_id' => ['required', 'integer', 'exists:companies,id'],
-        ]);
+        $company = $request->resolveCompany();
+        if ($company === null) {
+            abort(422, 'Partner non valido.');
+        }
 
         $lead = Lead::query()->findOrFail($id);
         $result = $this->adminOps->assignPartner(
             $lead,
-            (int) $validated['partner_id'],
+            $company->id,
             $request->user(),
+            $request,
         );
 
         return ApiEnvelope::success([
@@ -76,10 +79,10 @@ class LeadsController extends Controller
         ]);
     }
 
-    public function reroute(int $id): JsonResponse
+    public function reroute(Request $request, int $id): JsonResponse
     {
         $lead = Lead::query()->findOrFail($id);
 
-        return ApiEnvelope::success($this->adminOps->reroute($lead));
+        return ApiEnvelope::success($this->adminOps->reroute($lead, $request->user(), $request));
     }
 }

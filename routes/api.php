@@ -1,14 +1,21 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
+use App\Http\Controllers\Api\V1\Admin\CompanyVettingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardStatsController;
 use App\Http\Controllers\Api\V1\Admin\LeadsController as AdminLeadsController;
 use App\Http\Controllers\Api\V1\Admin\PartnerApprovalController;
 use App\Http\Controllers\Api\V1\Admin\PartnersController;
+use App\Http\Controllers\Api\V1\Admin\PrivacyErasureController;
+use App\Http\Controllers\Api\V1\Admin\SearchController;
 use App\Http\Controllers\Api\V1\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Api\V1\Admin\TransactionsController as AdminTransactionsController;
+use App\Http\Controllers\Api\V1\Admin\WalletController as AdminWalletController;
+use App\Http\Controllers\Api\V1\Admin\WebhooksController as AdminWebhooksController;
 use App\Http\Controllers\Api\V1\Auth\OtpController;
 use App\Http\Controllers\Api\V1\Auth\SessionController;
+use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\B2B\AppointmentsController;
 use App\Http\Controllers\Api\V1\B2B\AuthController as B2BAuthController;
 use App\Http\Controllers\Api\V1\B2B\CompanyProfileController;
@@ -17,24 +24,46 @@ use App\Http\Controllers\Api\V1\B2B\DashboardController as B2BDashboardControlle
 use App\Http\Controllers\Api\V1\B2B\LeadMarketplaceController;
 use App\Http\Controllers\Api\V1\B2B\OnboardingController;
 use App\Http\Controllers\Api\V1\B2B\RegisterController;
+use App\Http\Controllers\Api\V1\B2B\SmartCrmController;
 use App\Http\Controllers\Api\V1\B2B\WalletController;
+use App\Http\Controllers\Api\V1\B2C\AdvisorController;
 use App\Http\Controllers\Api\V1\B2C\LeadResultsController;
 use App\Http\Controllers\Api\V1\B2C\LeadSubmissionController;
 use App\Http\Controllers\Api\V1\B2C\LocationsController;
 use App\Http\Controllers\Api\V1\B2C\WizardController;
 use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\HealthController;
+use App\Http\Controllers\Api\V1\User\AdvisorBookingController;
+use App\Http\Controllers\Api\V1\User\PrivacyController;
 use App\Http\Controllers\Api\V1\User\UserAreaController;
+use App\Http\Controllers\Api\V1\Webhooks\PaymentWebhookController;
+use App\Http\Controllers\Api\V1\Webhooks\StripePaymentWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('/health', HealthController::class);
+
+    Route::post('/webhooks/payments/stripe', [StripePaymentWebhookController::class, 'handle'])
+        ->middleware('throttle:60,1');
+
+    Route::post('/webhooks/payments/{provider}', [PaymentWebhookController::class, 'handle'])
+        ->where('provider', 'mock|mollie')
+        ->middleware(['wenando.webhook', 'throttle:60,1']);
+
+    Route::post('/login', [B2BAuthController::class, 'login'])
+        ->middleware('throttle:auth-otp-verify');
+
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::post('/logout', [AuthController::class, 'logout']);
+    });
 
     Route::post('/consents', [ConsentController::class, 'store'])
         ->middleware('throttle:30,1');
 
     Route::middleware('auth:sanctum')->group(function (): void {
         Route::get('/consents/me', [ConsentController::class, 'me']);
+        Route::patch('/consents/me', [ConsentController::class, 'update'])
+            ->middleware('throttle:30,1');
     });
 
     /*
@@ -45,14 +74,17 @@ Route::prefix('v1')->group(function (): void {
     Route::prefix('b2c')->group(function (): void {
         Route::get('/sectors', [WizardController::class, 'sectors']);
         Route::get('/sectors/{slug}/wizard', [WizardController::class, 'show']);
-        Route::get('/locations/autocomplete', [LocationsController::class, 'autocomplete']);
+        Route::get('/locations/autocomplete', [LocationsController::class, 'autocomplete'])
+            ->middleware('throttle:locations-autocomplete');
+        Route::get('/advisor', [AdvisorController::class, 'show']);
 
         Route::post('/leads', [LeadSubmissionController::class, 'store'])
             ->middleware('throttle:wizard-submit');
 
         Route::get('/leads/{uuid}', [LeadResultsController::class, 'show']);
         Route::get('/leads/{uuid}/status', [LeadResultsController::class, 'status']);
-        Route::get('/leads/{uuid}/results', [LeadResultsController::class, 'results']);
+        Route::get('/leads/{uuid}/results', [LeadResultsController::class, 'results'])
+            ->middleware('throttle:b2c-lead-results');
         Route::get('/leads/{uuid}/matches', [LeadResultsController::class, 'matches']);
     });
 
@@ -64,12 +96,24 @@ Route::prefix('v1')->group(function (): void {
     Route::prefix('user')->middleware(['auth:sanctum', 'role:consumer'])->group(function (): void {
         Route::get('/home', [UserAreaController::class, 'home']);
         Route::get('/searches', [UserAreaController::class, 'searches']);
-        Route::get('/searches/{id}', [UserAreaController::class, 'searchShow']);
+        Route::get('/searches/{lead}', [UserAreaController::class, 'searchShow']);
+        Route::patch('/searches/{lead}', [UserAreaController::class, 'updateSearch']);
         Route::post('/leads', [UserAreaController::class, 'attachLead']);
         Route::get('/profile', [UserAreaController::class, 'profile']);
         Route::patch('/profile', [UserAreaController::class, 'updateProfile']);
         Route::get('/saved-matches', [UserAreaController::class, 'savedMatches']);
         Route::post('/saved-matches', [UserAreaController::class, 'toggleSavedMatch']);
+        Route::get('/advisor-bookings', [AdvisorBookingController::class, 'index']);
+        Route::post('/advisor-bookings', [AdvisorBookingController::class, 'store'])
+            ->middleware('throttle:30,1');
+        Route::patch('/advisor-bookings/{advisorBooking}', [AdvisorBookingController::class, 'update'])
+            ->middleware('throttle:30,1');
+        Route::delete('/advisor-bookings/{advisorBooking}', [AdvisorBookingController::class, 'destroy'])
+            ->middleware('throttle:30,1');
+        Route::get('/privacy/export', [PrivacyController::class, 'export'])
+            ->middleware('throttle:10,1');
+        Route::post('/privacy/erase-request', [PrivacyController::class, 'eraseRequest'])
+            ->middleware('throttle:10,1');
     });
 
     /*
@@ -95,20 +139,27 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('/dashboard', [B2BDashboardController::class, 'index']);
             Route::get('/wallet', [WalletController::class, 'show']);
-            Route::post('/wallet/recharge', [WalletController::class, 'recharge']);
+            Route::post('/wallet/recharge', [WalletController::class, 'recharge'])
+                ->middleware(['throttle:b2b-recharge', 'idempotent:b2b.wallet.recharge,1440']);
+            Route::get('/wallet/recharge/{id}', [WalletController::class, 'rechargeStatus']);
             Route::get('/wallet/transactions', [WalletController::class, 'transactions']);
             Route::get('/invoices', [WalletController::class, 'invoices']);
 
             Route::get('/marketplace/leads', [LeadMarketplaceController::class, 'index']);
             Route::get('/marketplace', [LeadMarketplaceController::class, 'index']);
-            Route::post('/marketplace/leads/{id}/unlock', [LeadMarketplaceController::class, 'unlock']);
-            Route::post('/leads/{id}/unlock', [LeadMarketplaceController::class, 'unlock']);
+            Route::post('/marketplace/leads/{id}/unlock', [LeadMarketplaceController::class, 'unlock'])
+                ->middleware(['throttle:b2b-unlock', 'idempotent:b2b.marketplace.unlock,1440']);
+            Route::post('/leads/{id}/unlock', [LeadMarketplaceController::class, 'unlock'])
+                ->middleware(['throttle:b2b-unlock', 'idempotent:b2b.marketplace.unlock,1440']);
 
-            Route::get('/crm/clients', [CrmController::class, 'index']);
+            Route::get('/crm/clients', [SmartCrmController::class, 'index']);
             Route::patch('/crm/clients/{id}', [CrmController::class, 'update']);
+            Route::put('/crm/clients/{id}/status', [SmartCrmController::class, 'updateStatus']);
+            Route::patch('/crm/clients/{id}/status', [SmartCrmController::class, 'updateStatus']);
 
             Route::get('/appointments', [AppointmentsController::class, 'index']);
-            Route::post('/appointments', [AppointmentsController::class, 'store']);
+            Route::post('/appointments', [AppointmentsController::class, 'store'])
+                ->middleware('idempotent:b2b.appointments.create,60');
 
             Route::get('/notifications', [B2BDashboardController::class, 'notifications']);
             Route::patch('/notifications/{id}/read', [B2BDashboardController::class, 'markNotificationRead']);
@@ -134,17 +185,23 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('/transactions', [AdminTransactionsController::class, 'index']);
         Route::get('/transactions/{transaction}', [AdminTransactionsController::class, 'show']);
+        Route::get('/wallet/pending-transfers', [AdminWalletController::class, 'pendingTransfers']);
+        Route::post('/wallet/complete-transfer', [AdminWalletController::class, 'completeTransfer']);
 
         Route::get('/companies', [PartnersController::class, 'index']);
         Route::get('/partners', [PartnersController::class, 'index']);
         Route::get('/partners/{company}', [PartnersController::class, 'show']);
-        Route::post('/partners/{company}/approve', [PartnerApprovalController::class, 'approve']);
+        Route::post('/partners/{company}/approve', [PartnerApprovalController::class, 'approve'])
+            ->middleware('idempotent:admin.partners.approve,1440');
         Route::post('/partners/{company}/reject', [PartnerApprovalController::class, 'reject']);
         Route::post('/partners/{company}/suspend', [PartnersController::class, 'suspend']);
         Route::post('/partners/{company}/impersonate', [PartnersController::class, 'impersonate']);
 
-        Route::post('/companies/{company}/approve', [PartnerApprovalController::class, 'approve']);
+        Route::post('/companies/{company}/approve', [CompanyVettingController::class, 'approve']);
         Route::post('/companies/{company}/reject', [PartnerApprovalController::class, 'reject']);
+        Route::post('/companies/{company}/vetting/approve', [CompanyVettingController::class, 'approve']);
+
+        Route::get('/advisor-bookings', [AdvisorBookingsController::class, 'index']);
 
         Route::get('/leads', [AdminLeadsController::class, 'index']);
         Route::get('/leads/{id}', [AdminLeadsController::class, 'show']);
@@ -157,6 +214,12 @@ Route::prefix('v1')->group(function (): void {
         Route::patch('/sectors/{id}', [AdminSettingsController::class, 'updateSector']);
 
         Route::get('/notifications', [AdminSettingsController::class, 'notifications']);
+        Route::get('/search', [SearchController::class, 'index']);
+
+        Route::get('/privacy/erasure-requests', [PrivacyErasureController::class, 'index']);
+        Route::patch('/privacy/erasure-requests/{id}', [PrivacyErasureController::class, 'update']);
+
+        Route::get('/webhooks/events', [AdminWebhooksController::class, 'events']);
     });
 
     /*

@@ -617,7 +617,3 @@ Allineata al workflow compliance multi-step:
 **Mirror deploy:** `backend/docs/legal/` → `public/legal/` (identici byte-per-byte).
 
 **Prossimo step workflow:** Step 2 — redazione policy legali (IT) e migration `consent_logs`.
-
----
-
-*Documento generato come Step 1 — strategia e architettura. Non costituisce consulenza legale.*

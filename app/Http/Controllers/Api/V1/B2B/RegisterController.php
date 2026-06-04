@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\B2B;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\B2B\StoreRegisterRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Http\Resources\V1\CompanyResource;
 use App\Http\Resources\V1\UserResource;
 use App\Services\B2bRegistrationService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class RegisterController extends Controller
@@ -19,18 +19,19 @@ class RegisterController extends Controller
         private readonly B2bRegistrationService $registrationService,
     ) {}
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreRegisterRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
-            'organization_name' => ['required', 'string', 'max:255'],
-            'legal_name' => ['required', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         $result = $this->registrationService->register(
+            $request,
             $validated['email'],
             $validated['organization_name'],
             $validated['legal_name'],
+            [
+                'consent_text_hash' => $validated['consent_text_hash'],
+                'policy_version' => $validated['policy_version'] ?? null,
+            ],
         );
 
         return ApiEnvelope::success([

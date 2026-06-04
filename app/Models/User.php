@@ -72,6 +72,14 @@ class User extends Authenticatable
     }
 
     /**
+     * @return HasMany<DataErasureRequest, $this>
+     */
+    public function dataErasureRequests(): HasMany
+    {
+        return $this->hasMany(DataErasureRequest::class);
+    }
+
+    /**
      * @return BelongsToMany<Role, $this>
      */
     public function roles(): BelongsToMany

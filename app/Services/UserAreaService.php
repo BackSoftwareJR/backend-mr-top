@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\LeadStatus;
+use App\Http\Resources\V1\UserSearchResource;
 use App\Models\Lead;
+use App\Models\LeadMatch;
 use App\Models\SavedMatch;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class UserAreaService
 {
@@ -21,7 +24,9 @@ class UserAreaService
         $latest = $user->leads()->latest()->first();
 
         return [
-            'latest_search' => $latest !== null ? $this->formatSearch($latest) : null,
+            'latest_search' => $latest !== null
+                ? (new UserSearchResource($latest))->resolve()
+                : null,
             'display_name' => $user->name ?? $user->email,
         ];
     }
@@ -29,31 +34,49 @@ class UserAreaService
     /**
      * @return LengthAwarePaginator<int, Lead>
      */
-    public function searches(User $user, int $perPage = 20): LengthAwarePaginator
+    public function searches(User $user, int $perPage = 20, int $page = 1): LengthAwarePaginator
     {
         return $user->leads()
             ->withCount(['leadMatches as match_count' => fn ($q) => $q->where('is_visible_to_consumer', true)])
             ->latest()
-            ->paginate($perPage);
+            ->paginate($perPage, ['*'], 'page', max(1, $page));
     }
 
     /**
      * @return array{search: array<string, mixed>, matches?: list<array<string, mixed>>}
      */
-    public function searchDetail(User $user, int $leadId): array
+    public function searchDetail(User $user, Lead $lead): array
     {
-        $lead = $user->leads()->whereKey($leadId)->firstOrFail();
+        if ($lead->user_id !== $user->id) {
+            abort(403, 'Ricerca non autorizzata.');
+        }
+
         $results = app(B2cLeadResultsService::class);
 
         return [
-            'search' => $this->formatSearch($lead),
+            'search' => (new UserSearchResource($lead))->resolve(),
             'matches' => $lead->status !== LeadStatus::Processing
                 ? $results->results($lead)['matches']
                 : null,
         ];
     }
 
-    public function attachLeadToUser(User $user, string $leadUuid): Lead
+    /**
+     * @return array{search: array<string, mixed>}
+     */
+    public function updateSearchTitle(Lead $lead, string $title): array
+    {
+        $lead->update(['title' => $title]);
+
+        return [
+            'search' => (new UserSearchResource($lead->fresh()))->resolve(),
+        ];
+    }
+
+    /**
+     * @return array{lead: Lead, user: User}
+     */
+    public function attachLeadToUser(User $user, string $leadUuid): array
     {
         $lead = Lead::query()->where('uuid', $leadUuid)->firstOrFail();
 
@@ -63,18 +86,46 @@ class UserAreaService
             abort(403, 'Lead non associabile.');
         }
 
-        return $lead->fresh();
+        $lead = $lead->fresh();
+        $user = $this->hydrateUserProfileFromLead($user, $lead);
+
+        return ['lead' => $lead, 'user' => $user];
+    }
+
+    private function hydrateUserProfileFromLead(User $user, Lead $lead): User
+    {
+        $updates = [];
+
+        if (($user->phone === null || $user->phone === '') && $lead->contact_phone) {
+            $updates['phone'] = $lead->contact_phone;
+        }
+
+        $emailPrefix = Str::before($user->email, '@');
+        if (
+            $lead->contact_name
+            && ($user->name === null || $user->name === '' || $user->name === $emailPrefix)
+        ) {
+            $updates['name'] = $lead->contact_name;
+        }
+
+        if ($updates !== []) {
+            $user->update($updates);
+        }
+
+        return $user->fresh();
     }
 
     /**
+     * @param  array{name?: string, phone?: string|null}  $attributes
      * @return array{user: User}
      */
-    public function updateProfile(User $user, ?string $name, ?string $phone): array
+    public function updateProfile(User $user, array $attributes): array
     {
-        $user->update(array_filter([
-            'name' => $name,
-            'phone' => $phone,
-        ], fn ($v) => $v !== null));
+        $allowed = array_intersect_key($attributes, array_flip(['name', 'phone']));
+
+        if ($allowed !== []) {
+            $user->update($allowed);
+        }
 
         return ['user' => $user->fresh()];
     }
@@ -114,9 +165,18 @@ class UserAreaService
                 return ['saved' => false];
             }
 
+            $this->assertSavableMatch($user, $companyId, $leadMatchId);
+
+            $resolvedCompanyId = $companyId;
+            if ($resolvedCompanyId === null && $leadMatchId !== null) {
+                $resolvedCompanyId = LeadMatch::query()
+                    ->whereKey($leadMatchId)
+                    ->value('company_id');
+            }
+
             SavedMatch::query()->create([
                 'user_id' => $user->id,
-                'company_id' => $companyId,
+                'company_id' => $resolvedCompanyId,
                 'lead_match_id' => $leadMatchId,
             ]);
 
@@ -124,24 +184,22 @@ class UserAreaService
         });
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function formatSearch(Lead $lead): array
+    private function assertSavableMatch(User $user, ?int $companyId, ?int $leadMatchId): void
     {
-        $matchCount = $lead->leadMatches()
+        $visibleMatches = LeadMatch::query()
             ->where('is_visible_to_consumer', true)
-            ->count();
+            ->whereHas('lead', fn ($leadQuery) => $leadQuery->where('user_id', $user->id));
 
-        return [
-            'id' => $lead->id,
-            'uuid' => $lead->uuid,
-            'title' => $lead->need_summary ?? 'Ricerca assistenza',
-            'location' => $lead->location_label,
-            'date' => $lead->created_at?->toDateString(),
-            'status' => $lead->status === LeadStatus::Processing ? 'processing' : 'completed',
-            'match_count' => $matchCount,
-            'answers' => $lead->payload,
-        ];
+        if ($leadMatchId !== null) {
+            if (! $visibleMatches->clone()->whereKey($leadMatchId)->exists()) {
+                abort(403, 'Match non salvabile.');
+            }
+
+            return;
+        }
+
+        if ($companyId !== null && ! $visibleMatches->clone()->where('company_id', $companyId)->exists()) {
+            abort(403, 'Match non salvabile.');
+        }
     }
 }

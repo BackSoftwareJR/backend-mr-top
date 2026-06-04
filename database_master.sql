@@ -14,7 +14,7 @@
 --   [ ] consent_records — GDPR wizard consent (deferred)
 --   [ ] companies consumer_profile JSON — B2C match cards (name, image, pros)
 --   [ ] Recommended indexes: see 10_SQL_REVIEW_&_GAPS.md §3
---   [ ] activity_feed — no table; use aggregates or future activity_logs
+--   [x] activity_feed — migration 000038 (company_id, type, text, metadata, created_at)
 -- =============================================================================
 
 SET NAMES utf8mb4;

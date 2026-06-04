@@ -91,15 +91,77 @@ Consumer intake, results, saved matches, user area. Replaces wizard state + `moc
 
 | Method | Path | Purpose | Auth | Key request | Key response |
 |--------|------|---------|------|-------------|--------------|
-| GET | `/user/searches` | List past wizard submissions | Consumer | `?page=` | `{ searches: [{ id, title, location, date, status, match_count, answers }] }` |
-| GET | `/user/searches/{id}` | Single search detail | Consumer | — | `{ search, matches? }` |
+| GET | `/user/searches` | List past wizard submissions | Consumer | `?page=`, `?per_page=` (default 20) | `{ searches: [{ id, uuid, public_ref, title, location, date, status, match_count, answers }] }` + **meta** `{ page, per_page, total, last_page }` |
+| GET | `/user/searches/{lead}` | Single search detail + matches | Consumer | — | `{ search, matches? }` — **`{lead}`** route binding: `Lead` by **`uuid`** or **`public_ref`** (`LD-####`); 403 if not owned |
+| PATCH | `/user/searches/{lead}` | Rename search title | Consumer | `title` | `{ search }` — same `{lead}` binding as GET |
 | GET | `/user/home` | Dashboard summary | Consumer | — | `{ latest_search, display_name }` |
-| PATCH | `/user/profile` | Update name, phone | Consumer | `name`, `phone` | `{ user }` |
+| GET | `/user/profile` | Read profile | Consumer | — | `{ user: { id, email, name, phone, user_type } }` |
+| PATCH | `/user/profile` | Update name, phone | Consumer | `name?`, `phone?` (nullable clears phone) | `{ user }` — `UpdateUserProfileRequest` |
 | GET | `/user/saved-matches` | Bookmarked companies | Consumer | — | `{ ids[] }` |
 | POST | `/user/saved-matches` | Toggle save | Consumer | `company_id` or `lead_match_id` | `{ saved: true/false }` |
 | POST | `/advisor-bookings` | Book peer advisor call | Consumer | `lead_uuid?`, `name`, `date`, `time` | `{ booking_id }` |
 
 **Search status values:** `processing`, `completed` (from `mockUserSearches.js`).
+
+### Consents (GDPR audit trail)
+
+Append-only `consent_logs`. Frontend: `consentService.js`, `wizardConsent.js`, `cookieBannerConsent.js`.
+
+| Method | Path | Purpose | Auth | Key request | Key response |
+|--------|------|---------|------|-------------|--------------|
+| POST | `/consents` | Register one or more consents (wizard, cookie banner, anonymous session) | Optional | `{ consents: [{ consent_type, policy_version, consent_given, consent_text_hash, session_id? }] }` | `{ consents: ConsentLog[] }` |
+| GET | `/consents/me` | Latest consent per type + paginated history | Consumer | — | `{ latest_by_type: { [type]: { consent_given, policy_version, created_at } }, history? }` |
+| PATCH | `/consents/me` | Append preference rows (revoke = new row with `consent_given: false`) | Consumer | `{ preferences: [{ consent_type, consent_given, consent_text_hash, policy_version }] }` | `{ preferences: ConsentLog[] }` |
+
+**`consent_type` values:** `privacy_policy`, `terms_b2c`, `lead_sharing`, `terms_b2b`, `marketing`, `analytics_cookies`.
+
+**Wizard flow:** `POST /consents` (required: privacy, terms, lead_sharing; optional: marketing) → then `POST /b2c/leads` with `consent.marketing_accepted` when checkbox checked.
+
+### Privacy (DSAR — access, erasure)
+
+| Method | Path | Purpose | Auth | Key request | Key response |
+|--------|------|---------|------|-------------|--------------|
+| GET | `/user/privacy/export` | Art. 15 access / Art. 20 portability (JSON) | Consumer | — | `{ export: { user, leads, consents, … } }` |
+| POST | `/user/privacy/erase-request` | Art. 17 erasure request (identity queue) | Consumer | `confirmed: true`, `reason?` | `{ erasure_request: { id, status: pending, … } }` |
+
+**Erasure workflow (admin-gated):**
+
+1. **Submit** — creates `data_erasure_requests` row (`pending`), audit `privacy_erase_request`, emails `privacy_contact_email` (if configured). **Does not** dispatch `ProcessDataErasureRequest` or delete data.
+2. **Admin queue** — `GET /admin/privacy/erasure-requests` lists `pending` + `processing`; surfaces in admin notifications.
+3. **Approve** — `PATCH /admin/privacy/erasure-requests/{id}` with `action: approve` dispatches `ProcessDataErasureRequest` only when status is `pending`.
+4. **Job** — soft-deletes user, anonymizes owned leads, revokes Sanctum tokens, marks request `completed`.
+5. **Reject** — `action: reject` on `pending` only → `rejected`, no job.
+
+Duplicate pending request → **409** `ERASURE_REQUEST_PENDING`.
+
+**`POST /consents` — example (cookie banner):**
+
+```json
+{
+  "consents": [{
+    "consent_type": "analytics_cookies",
+    "policy_version": "1.0.0",
+    "consent_given": true,
+    "consent_text_hash": "<sha256 of banner text>",
+    "session_id": "<uuid>"
+  }]
+}
+```
+
+**`PATCH /consents/me` — example (profile preferences):**
+
+```json
+{
+  "preferences": [{
+    "consent_type": "marketing",
+    "consent_given": false,
+    "consent_text_hash": "<sha256 of marketing label>",
+    "policy_version": "1.0.0"
+  }]
+}
+```
+
+Client sync: profile `analytics_cookies` toggle ↔ `localStorage` key `wenando_cookie_consent` via `analyticsCookieSync.js` (loop-safe single helper).
 
 ---
 
@@ -116,7 +178,7 @@ Partner registration, onboarding, marketplace, wallet, CRM, calendar, billing. R
 | PATCH | `/b2b/onboarding` | Save step progress | B2B | Partial onboarding `data` patch | `{ data, status }` |
 | POST | `/b2b/onboarding/documents` | Upload visura / identity | B2B | `multipart`: `type`, `file` | `{ type, file_name, path }` |
 | POST | `/b2b/onboarding/submit` | Submit for admin review | B2B | — | `{ status: "pending_review" }` |
-| GET | `/b2b/onboarding/status` | Vetting status only | B2B | — | `{ status, redirect_to }` |
+| GET | `/b2b/onboarding/status` | Vetting status only | B2B | — | `{ status, redirect_to, onboarding_complete, rejection_reason? }` (`rejection_reason` when `rejected`) |
 
 **Onboarding `dynamic` (Senior Care):** `sector`, `capacity`, `nonSelfSufficient`, `nightStaff`, `notes`  
 **`schedule`:** `{ mon: { open, slots }, … }`  
@@ -132,6 +194,15 @@ Partner registration, onboarding, marketplace, wallet, CRM, calendar, billing. R
 | GET | `/b2b/wallet` | Balance & summary | B2B | — | `{ balance_credits, total_spent, currency }` |
 | POST | `/b2b/wallet/recharge` | Add credits | B2B | `amount`, `payment_method` (`card`, `transfer`) | `{ transaction, wallet }` |
 | GET | `/b2b/wallet/transactions` | Invoice/history list | B2B | `?page=` | `{ transactions: [{ id, date, description, amount, status }] }` |
+
+### Company profile (B2C match card)
+
+Public-facing partner card shown in consumer match results. Row is **auto-created** on `POST /b2b/register` and on admin approve (`display_name` ← `organization_name`, `service_type` from onboarding `dynamic.sector` when set).
+
+| Method | Path | Purpose | Auth | Key request | Key response |
+|--------|------|---------|------|-------------|--------------|
+| GET | `/b2b/company/profile` | Own company + profile | B2B | — | `{ company: { organization_name, city, … }, profile: { display_name, service_type, tagline, description, pros[], image_url, location_label, contact_hint } \| null }` |
+| PATCH | `/b2b/company/profile` | Update match card fields | B2B | `display_name?`, `service_type?`, `tagline?`, `description?`, `pros?`, `image_url?`, `location_label?`, `contact_hint?` | `{ company, profile }` — creates profile if missing (legacy companies) |
 
 ### Lead marketplace
 
@@ -198,6 +269,14 @@ Platform operations at `/admin` (SPA currently **unauthenticated** — API must 
 | GET | `/admin/portfolio/partners` | Partner portfolio cards | SuperAdmin | — | `{ partners: [{ id, nome, tier, aum, revenue_share, trend[], risk }] }` |
 | GET | `/admin/risk-indicators` | Risk widgets | SuperAdmin | — | `{ indicators[] }` |
 
+### Global search (spotlight)
+
+| Method | Path | Purpose | Auth | Key request | Key response |
+|--------|------|---------|------|-------------|--------------|
+| GET | `/admin/search` | Cross-entity spotlight search | SuperAdmin | `?q=` (min 2 chars) | `{ partners: [{ type: "partner", id, label, subtitle }], leads: [{ type: "lead", id, label, subtitle }], transactions: [{ type: "transaction", id, label, subtitle }], advisor_bookings: [{ type: "advisor_booking", id, label, subtitle }] }` |
+
+**`advisor_bookings` hits:** matched on `client_name` or linked lead `title`; `label` = consumer name, `subtitle` = lead title + scheduled date/time.
+
 ### Transactions
 
 | Method | Path | Purpose | Auth | Key request | Key response |
@@ -231,6 +310,12 @@ Platform operations at `/admin` (SPA currently **unauthenticated** — API must 
 | POST | `/admin/leads/{id}/reroute` | Trigger AI re-match | SuperAdmin | — | `{ job_id }` |
 
 **Lead admin `stato`:** `In routing`, `Assegnato`, `In attesa`, `Chiuso`
+
+### Advisor bookings
+
+| Method | Path | Purpose | Auth | Key request | Key response |
+|--------|------|---------|------|-------------|--------------|
+| GET | `/admin/advisor-bookings` | B2C peer-advisor call queue | SuperAdmin | — | `{ upcoming: [{ id, consumer_name, consumer_email, lead_title, scheduled_at, scheduled_date, scheduled_time }], past: [...] }` |
 
 ### Settings & sectors
 

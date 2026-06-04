@@ -11,7 +11,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
  *
  * API contract:
  * - id: internal audit id (integer)
- * - consent_type: privacy_policy | terms_b2c | marketing | analytics_cookies | lead_sharing
+ * - consent_type: privacy_policy | terms_b2c | terms_b2b | marketing | analytics_cookies | lead_sharing
  * - policy_version: semver string (e.g. 1.0.0)
  * - consent_given: boolean
  * - created_at: ISO-8601 timestamp
