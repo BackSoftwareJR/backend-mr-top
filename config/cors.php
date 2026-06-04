@@ -34,6 +34,7 @@ return [
         'Accept',
         'X-XSRF-TOKEN',
         'X-Request-Id',
+        'Idempotency-Key',
     ],
 
     'exposed_headers' => [],
