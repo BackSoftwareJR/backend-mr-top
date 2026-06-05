@@ -14,6 +14,7 @@ use App\Models\WebhookEvent;
 use App\Services\AuditLogService;
 use App\Services\PaymentIntentService;
 use App\Services\WebhookEventService;
+use App\Support\CentralLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Stripe\Exception\SignatureVerificationException;
@@ -91,6 +92,17 @@ class StripePaymentWebhookController extends Controller
             return ApiEnvelope::success(['received' => true]);
         } catch (Throwable $exception) {
             $this->webhookEventService->markFailed($webhookEvent);
+
+            CentralLog::webhook(
+                'webhook.processing_failed',
+                [
+                    'provider' => 'stripe',
+                    'event_type' => $event->type,
+                    'webhook_event_id' => $webhookEvent->id,
+                ],
+                'error',
+                $exception,
+            );
 
             throw $exception;
         }

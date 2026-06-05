@@ -6,17 +6,19 @@ namespace App\Support;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Throwable;
 
 final class ApiRequestLogger
 {
-    public const CHANNEL = 'json';
+    public const CHANNEL = CentralLog::JSON_CHANNEL;
 
     public static function logRequest(Request $request, Response $response, int $durationMs): void
     {
-        self::write(self::payload($request, $response->getStatusCode(), $durationMs));
+        $status = $response->getStatusCode();
+        $level = self::levelForStatus($status);
+
+        CentralLog::api('api', self::payload($request, $status, $durationMs), $level);
     }
 
     public static function logException(Request $request, Throwable $exception): void
@@ -30,7 +32,7 @@ final class ApiRequestLogger
         $payload['event'] = 'exception';
         $payload['exception'] = $exception::class;
 
-        self::write($payload, 'error');
+        CentralLog::api('api.exception', $payload, 'error', $exception);
     }
 
     /**
@@ -74,19 +76,5 @@ final class ApiRequestLogger
         }
 
         return 500;
-    }
-
-    /**
-     * @param  array<string, mixed>  $payload
-     */
-    private static function write(array $payload, ?string $level = null): void
-    {
-        $level ??= is_string($payload['level'] ?? null) ? $payload['level'] : 'info';
-
-        Log::channel(self::CHANNEL)->log(
-            $level,
-            'api',
-            $payload,
-        );
     }
 }

@@ -30,6 +30,7 @@ class MatchResultResource extends JsonResource
         $profile = $company?->profile;
         $attrs = $company?->dynamic_attributes ?? [];
         $sectorKey = is_string($attrs['sector'] ?? null) ? $attrs['sector'] : 'adi';
+        $metadata = is_array($match->metadata) ? $match->metadata : [];
 
         return [
             'id' => (string) $match->id,
@@ -38,6 +39,9 @@ class MatchResultResource extends JsonResource
             'type' => $profile?->service_type ?? $this->sectorLabel($sectorKey),
             'location' => $profile?->location_label ?? $company?->city ?? '',
             'compatibility' => $match->match_score,
+            'covers_zone' => (bool) ($metadata['spatial_match'] ?? false),
+            'spatial_match' => (bool) ($metadata['spatial_match'] ?? false),
+            'distance_km' => isset($metadata['distance_km']) ? (float) $metadata['distance_km'] : null,
             'image_url' => $profile?->image_url,
             'tagline' => $profile?->tagline,
             'description' => $profile?->description ?? $attrs['notes'] ?? 'Struttura verificata Wenando.',

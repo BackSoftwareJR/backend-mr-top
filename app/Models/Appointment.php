@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
     'scheduled_date',
     'scheduled_time',
     'note',
+    'checklist',
     'type',
 ])]
 class Appointment extends Model
@@ -30,6 +31,7 @@ class Appointment extends Model
     {
         return [
             'scheduled_date' => 'date',
+            'checklist' => 'array',
             'type' => AppointmentType::class,
         ];
     }

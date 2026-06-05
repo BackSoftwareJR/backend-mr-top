@@ -70,6 +70,14 @@ class Lead extends Model
     }
 
     /**
+     * @return HasMany<LeadInterestArea, $this>
+     */
+    public function interestAreas(): HasMany
+    {
+        return $this->hasMany(LeadInterestArea::class)->orderBy('sort_order');
+    }
+
+    /**
      * @return HasMany<ConsentLog, $this>
      */
     public function consentLogs(): HasMany

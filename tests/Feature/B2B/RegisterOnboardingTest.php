@@ -111,6 +111,13 @@ class RegisterOnboardingTest extends TestCase
             ->assertJsonPath('data.data.visura', 'visura-camerale.pdf')
             ->assertJsonPath('data.data.identity_doc', 'documento-identita.pdf');
 
+        $this->putJson('/api/v1/b2b/coverage-zone', [
+            'center_lat' => 41.9028,
+            'center_lng' => 12.4964,
+            'radius_km' => 20,
+            'label' => 'Roma',
+        ])->assertOk();
+
         $this->postJson('/api/v1/b2b/onboarding/submit', [
             'terms_b2b_accepted' => true,
             'terms_text_hash' => self::TERMS_B2B_HASH,

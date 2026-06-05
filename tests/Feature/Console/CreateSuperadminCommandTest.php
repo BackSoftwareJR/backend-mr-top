@@ -78,4 +78,28 @@ class CreateSuperadminCommandTest extends TestCase
             'user_type' => UserType::Superadmin->value,
         ]);
     }
+
+    public function test_fix_superadmin_role_alias_is_idempotent(): void
+    {
+        User::factory()->create([
+            'email' => 'jrovera05@gmail.com',
+            'user_type' => UserType::Superadmin,
+        ]);
+
+        $this->artisan('wenando:fix-superadmin-role', ['email' => 'jrovera05@gmail.com'])
+            ->assertSuccessful();
+
+        $role = Role::query()->where('name', 'super_admin')->firstOrFail();
+        $user = User::query()->where('email', 'jrovera05@gmail.com')->firstOrFail();
+
+        $this->assertTrue(
+            $user->roles()
+                ->where('roles.id', $role->id)
+                ->wherePivot('company_id', null)
+                ->exists(),
+        );
+
+        $this->artisan('wenando:fix-superadmin-role', ['email' => 'jrovera05@gmail.com'])
+            ->assertSuccessful();
+    }
 }

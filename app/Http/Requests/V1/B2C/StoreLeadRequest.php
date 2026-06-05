@@ -53,6 +53,17 @@ class StoreLeadRequest extends FormRequest
                 'max:64',
                 'regex:/^[a-z0-9-]+$/',
             ],
+            'payload.interest_areas' => ['sometimes', 'array', 'max:10'],
+            'payload.interest_areas.*.type' => [
+                'required_with:payload.interest_areas',
+                'string',
+                Rule::in(['circle', 'polygon']),
+            ],
+            'payload.interest_areas.*.center_lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'payload.interest_areas.*.center_lng' => ['nullable', 'numeric', 'between:-180,180'],
+            'payload.interest_areas.*.radius_km' => ['nullable', 'numeric', 'min:0.5', 'max:80'],
+            'payload.interest_areas.*.geometry' => ['nullable', 'array'],
+            'payload.interest_areas.*.label' => ['nullable', 'string', 'max:255'],
             'payload.budget' => ['required', 'array'],
             'payload.budget.min' => ['required', 'integer', 'min:500', 'max:4900'],
             'payload.budget.max' => ['required', 'integer', 'min:600', 'max:5000'],
@@ -90,6 +101,38 @@ class StoreLeadRequest extends FormRequest
                     'payload.budget.max',
                     'Il budget massimo deve essere almeno 100€ superiore al minimo.',
                 );
+            }
+
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
+            $interestAreas = $this->input('payload.interest_areas');
+
+            if (is_array($interestAreas)) {
+                foreach ($interestAreas as $index => $area) {
+                    if (! is_array($area)) {
+                        continue;
+                    }
+
+                    $type = $area['type'] ?? null;
+
+                    if ($type === 'circle') {
+                        if (! isset($area['center_lat'], $area['center_lng'], $area['radius_km'])) {
+                            $validator->errors()->add(
+                                "payload.interest_areas.{$index}",
+                                'Le aree circolari richiedono centro e raggio.',
+                            );
+                        }
+                    }
+
+                    if ($type === 'polygon' && ! is_array($area['geometry'] ?? null)) {
+                        $validator->errors()->add(
+                            "payload.interest_areas.{$index}",
+                            'Le aree poligonali richiedono una geometria valida.',
+                        );
+                    }
+                }
             }
 
             if ($validator->errors()->isNotEmpty()) {

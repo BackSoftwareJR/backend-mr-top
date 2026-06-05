@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace Tests\Feature\B2C;
 
 use App\Enums\ConsentType;
+use App\Enums\InterestAreaType;
 use App\Enums\LeadStatus;
 use App\Enums\VettingStatus;
 use App\Models\AdvisorProfile;
 use App\Models\Company;
+use App\Models\CompanyCoverageZone;
 use App\Models\CompanyProfile;
 use App\Models\ConsentLog;
 use App\Models\Lead;
+use App\Models\LeadInterestArea;
 use App\Models\Sector;
 use App\Services\LeadMatchingService;
 use App\Support\ItalianLocationParser;
+use App\Support\SpatialMatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -376,6 +380,78 @@ class LeadMatchingTest extends TestCase
         $matches = app(LeadMatchingService::class)->matchLead($lead);
 
         $this->assertCount(1, $matches);
+    }
+
+    public function test_spatial_overlap_matches_when_coverage_and_interest_area_overlap(): void
+    {
+        $company = Company::query()->firstOrFail();
+
+        CompanyCoverageZone::query()->create([
+            'company_id' => $company->id,
+            'center_lat' => 45.4642,
+            'center_lng' => 9.19,
+            'radius_km' => 20,
+            'label' => 'Milano centro',
+        ]);
+
+        $lead = $this->createLeadForMatching('Milano (MI)');
+        LeadInterestArea::query()->create([
+            'lead_id' => $lead->id,
+            'type' => InterestAreaType::Circle,
+            'center_lat' => 45.48,
+            'center_lng' => 9.22,
+            'radius_km' => 10,
+            'label' => 'Zona Navigli',
+            'sort_order' => 0,
+        ]);
+
+        $matches = app(LeadMatchingService::class)->matchLead($lead->fresh(['interestAreas']));
+
+        $this->assertCount(1, $matches);
+        $this->assertTrue($matches[0]->metadata['spatial_match'] ?? false);
+    }
+
+    public function test_spatial_no_overlap_excludes_company_even_if_text_geo_would_match(): void
+    {
+        $company = Company::query()->firstOrFail();
+
+        CompanyCoverageZone::query()->create([
+            'company_id' => $company->id,
+            'center_lat' => 41.9028,
+            'center_lng' => 12.4964,
+            'radius_km' => 10,
+            'label' => 'Roma centro',
+        ]);
+
+        $lead = $this->createLeadForMatching('Milano (MI)');
+        LeadInterestArea::query()->create([
+            'lead_id' => $lead->id,
+            'type' => InterestAreaType::Circle,
+            'center_lat' => 45.4642,
+            'center_lng' => 9.19,
+            'radius_km' => 10,
+            'label' => 'Milano (MI)',
+            'sort_order' => 0,
+        ]);
+
+        $matches = app(LeadMatchingService::class)->matchLead($lead->fresh(['interestAreas']));
+
+        $this->assertCount(0, $matches);
+    }
+
+    public function test_spatial_matcher_circle_polygon_overlap(): void
+    {
+        $matcher = app(SpatialMatcher::class);
+
+        $ring = [
+            [9.0, 45.0],
+            [9.5, 45.0],
+            [9.5, 45.5],
+            [9.0, 45.5],
+            [9.0, 45.0],
+        ];
+
+        $this->assertTrue($matcher->circleIntersectsPolygon(45.25, 9.25, 8, $ring));
     }
 
     private function createLeadForMatching(string $locationLabel): Lead

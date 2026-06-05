@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\B2B\AppointmentsController;
 use App\Http\Controllers\Api\V1\B2B\AuthController as B2BAuthController;
 use App\Http\Controllers\Api\V1\B2B\CompanyProfileController;
+use App\Http\Controllers\Api\V1\B2B\CoverageZoneController;
 use App\Http\Controllers\Api\V1\B2B\CrmController;
 use App\Http\Controllers\Api\V1\B2B\DashboardController as B2BDashboardController;
 use App\Http\Controllers\Api\V1\B2B\LeadMarketplaceController;
@@ -30,18 +31,26 @@ use App\Http\Controllers\Api\V1\B2C\AdvisorController;
 use App\Http\Controllers\Api\V1\B2C\LeadResultsController;
 use App\Http\Controllers\Api\V1\B2C\LeadSubmissionController;
 use App\Http\Controllers\Api\V1\B2C\LocationsController;
+use App\Http\Controllers\Api\V1\B2C\NandoController;
 use App\Http\Controllers\Api\V1\B2C\WizardController;
 use App\Http\Controllers\Api\V1\ConsentController;
+use App\Http\Controllers\Api\V1\GeoController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\User\AdvisorBookingController;
 use App\Http\Controllers\Api\V1\User\PrivacyController;
 use App\Http\Controllers\Api\V1\User\UserAreaController;
 use App\Http\Controllers\Api\V1\Webhooks\PaymentWebhookController;
 use App\Http\Controllers\Api\V1\Webhooks\StripePaymentWebhookController;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
     Route::get('/health', HealthController::class);
+
+    Route::get('/geo/search', [GeoController::class, 'search'])
+        ->middleware('throttle:geo-search');
+    Route::get('/geo/reverse', [GeoController::class, 'reverse'])
+        ->middleware('throttle:geo-search');
 
     Route::post('/webhooks/payments/stripe', [StripePaymentWebhookController::class, 'handle'])
         ->middleware('throttle:60,1');
@@ -77,6 +86,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/locations/autocomplete', [LocationsController::class, 'autocomplete'])
             ->middleware('throttle:locations-autocomplete');
         Route::get('/advisor', [AdvisorController::class, 'show']);
+
+        Route::post('/nando/refine', [NandoController::class, 'refine'])
+            ->middleware('throttle:nando-refine');
 
         Route::post('/leads', [LeadSubmissionController::class, 'store'])
             ->middleware('throttle:wizard-submit');
@@ -147,6 +159,10 @@ Route::prefix('v1')->group(function (): void {
 
             Route::get('/company/profile', [CompanyProfileController::class, 'show']);
             Route::patch('/company/profile', [CompanyProfileController::class, 'update']);
+
+            Route::get('/coverage-zone', [CoverageZoneController::class, 'show']);
+            Route::put('/coverage-zone', [CoverageZoneController::class, 'update']);
+            Route::delete('/coverage-zone', [CoverageZoneController::class, 'destroy']);
 
             Route::get('/dashboard', [B2BDashboardController::class, 'index']);
             Route::get('/wallet', [WalletController::class, 'show']);

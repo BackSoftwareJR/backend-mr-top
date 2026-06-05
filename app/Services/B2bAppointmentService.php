@@ -70,4 +70,32 @@ class B2bAppointmentService
             ];
         });
     }
+
+    public function update(Company $company, int $appointmentId, array $data): Appointment
+    {
+        $appointment = Appointment::query()
+            ->where('company_id', $company->id)
+            ->whereKey($appointmentId)
+            ->firstOrFail();
+
+        $updates = [];
+        if (array_key_exists('note', $data)) {
+            $updates['note'] = $data['note'];
+        }
+        if (array_key_exists('checklist', $data)) {
+            $updates['checklist'] = $data['checklist'];
+        }
+        if (array_key_exists('date', $data)) {
+            $updates['scheduled_date'] = $data['date'];
+        }
+        if (array_key_exists('time', $data)) {
+            $updates['scheduled_time'] = $data['time'];
+        }
+
+        if ($updates !== []) {
+            $appointment->update($updates);
+        }
+
+        return $appointment->fresh();
+    }
 }

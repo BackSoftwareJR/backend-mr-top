@@ -127,6 +127,14 @@ class Company extends Model
     }
 
     /**
+     * @return HasOne<CompanyCoverageZone, $this>
+     */
+    public function coverageZone(): HasOne
+    {
+        return $this->hasOne(CompanyCoverageZone::class);
+    }
+
+    /**
      * @return HasOne<Wallet, $this>
      */
     public function wallet(): HasOne

@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\DocumentType;
 use App\Enums\TrustTestStatus;
 use App\Enums\VettingStatus;
+use App\Http\Resources\V1\CompanyCoverageZoneResource;
 use App\Models\Company;
 use App\Models\CompanyDocument;
 use App\Models\TrustTest;
@@ -15,11 +16,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 
 class B2bOnboardingService
 {
     public function __construct(
         private readonly ConsentLogService $consentLogService,
+        private readonly B2bCoverageZoneService $coverageZoneService,
     ) {}
 
     /**
@@ -28,6 +31,8 @@ class B2bOnboardingService
     public function getState(Company $company): array
     {
         $trustTest = $company->trustTests()->latest()->first();
+
+        $coverageZone = $company->coverageZone;
 
         return [
             'status' => $company->vetting_status->value,
@@ -40,6 +45,9 @@ class B2bOnboardingService
                 'dynamic' => $company->dynamic_attributes ?? [],
                 'schedule' => $company->schedule ?? [],
                 'trust_answers' => $trustTest?->answers ?? [],
+                'coverage_zone' => $coverageZone !== null
+                    ? (new CompanyCoverageZoneResource($coverageZone))->resolve()
+                    : null,
             ],
         ];
     }
@@ -68,6 +76,13 @@ class B2bOnboardingService
             }
             if (isset($patch['trust_answers'])) {
                 $this->upsertTrustTest($company, $patch['trust_answers']);
+            }
+            if (array_key_exists('coverage_zone', $patch)) {
+                if ($patch['coverage_zone'] === null) {
+                    $this->coverageZoneService->delete($company);
+                } else {
+                    $this->coverageZoneService->upsert($company, $patch['coverage_zone']);
+                }
             }
 
             if ($company->vetting_status === VettingStatus::Draft) {
@@ -117,6 +132,12 @@ class B2bOnboardingService
      */
     public function submit(Company $company, Request $request, User $user, array $consentPayload): array
     {
+        if (! $company->coverageZone()->exists()) {
+            throw ValidationException::withMessages([
+                'coverage_zone' => ['Devi configurare la zona di copertura prima di inviare il profilo.'],
+            ]);
+        }
+
         return DB::transaction(function () use ($company, $request, $user, $consentPayload): array {
             $this->consentLogService->recordB2bOnboardingSubmitConsents(
                 $request,
@@ -174,6 +195,10 @@ class B2bOnboardingService
 
     private function currentStep(Company $company): int
     {
+        if ($company->coverageZone()->exists()) {
+            return 3;
+        }
+
         if ($company->vat_number && $company->sdi_code) {
             return 2;
         }

@@ -21,7 +21,10 @@ class CreateSuperadminCommand extends Command
                             {email? : Super admin email (falls back to SEED_SUPERADMIN_EMAIL)}
                             {--name= : Display name (default: Wenando Super Admin)}';
 
-    protected $description = 'Seed RBAC roles if missing and create or update one superadmin user';
+    /** @var list<string> */
+    protected $aliases = ['wenando:fix-superadmin-role'];
+
+    protected $description = 'Seed RBAC roles if missing and create or update one superadmin user (idempotent)';
 
     public function handle(): int
     {
@@ -79,8 +82,10 @@ class CreateSuperadminCommand extends Command
             ->wherePivot('company_id', null)
             ->exists();
 
+        $roleAttached = false;
         if (! $hasRole) {
             $user->roles()->attach($role->id, ['company_id' => null]);
+            $roleAttached = true;
         }
 
         $created = $user->wasRecentlyCreated;
@@ -91,6 +96,12 @@ class CreateSuperadminCommand extends Command
             $email,
             $name,
         ));
+
+        if ($roleAttached) {
+            $this->components->info('Attached super_admin role (model_has_roles).');
+        } elseif ($hasRole) {
+            $this->components->info('super_admin role already present.');
+        }
 
         return self::SUCCESS;
     }

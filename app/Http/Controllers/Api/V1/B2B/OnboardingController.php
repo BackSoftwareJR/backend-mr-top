@@ -35,6 +35,13 @@ class OnboardingController extends Controller
             'dynamic' => ['sometimes', 'array'],
             'schedule' => ['sometimes', 'array'],
             'trust_answers' => ['sometimes', 'array'],
+            'coverage_zone' => ['sometimes', 'nullable', 'array'],
+            'coverage_zone.center_lat' => ['required_with:coverage_zone', 'numeric', 'between:-90,90'],
+            'coverage_zone.center_lng' => ['required_with:coverage_zone', 'numeric', 'between:-180,180'],
+            'coverage_zone.radius_km' => ['required_with:coverage_zone', 'numeric', 'min:0.5', 'max:80'],
+            'coverage_zone.label' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'coverage_zone.geocode_place_id' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'coverage_zone.geocode_meta' => ['sometimes', 'nullable', 'array'],
         ]);
 
         $patch = $validated['data'] ?? $validated;

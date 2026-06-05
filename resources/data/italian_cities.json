@@ -1,71 +1,485 @@
 [
-  { "city": "Agrigento", "province": "AG", "region": "Sicilia" },
-  { "city": "Alessandria", "province": "AL", "region": "Piemonte" },
-  { "city": "Ancona", "province": "AN", "region": "Marche" },
-  { "city": "Aosta", "province": "AO", "region": "Valle d'Aosta" },
-  { "city": "Arezzo", "province": "AR", "region": "Toscana" },
-  { "city": "Asti", "province": "AT", "region": "Piemonte" },
-  { "city": "Avellino", "province": "AV", "region": "Campania" },
-  { "city": "Bari", "province": "BA", "region": "Puglia" },
-  { "city": "Bergamo", "province": "BG", "region": "Lombardia" },
-  { "city": "Bologna", "province": "BO", "region": "Emilia-Romagna" },
-  { "city": "Bolzano", "province": "BZ", "region": "Trentino-Alto Adige" },
-  { "city": "Brescia", "province": "BS", "region": "Lombardia" },
-  { "city": "Cagliari", "province": "CA", "region": "Sardegna" },
-  { "city": "Catania", "province": "CT", "region": "Sicilia" },
-  { "city": "Catanzaro", "province": "CZ", "region": "Calabria" },
-  { "city": "Como", "province": "CO", "region": "Lombardia" },
-  { "city": "Cosenza", "province": "CS", "region": "Calabria" },
-  { "city": "Cremona", "province": "CR", "region": "Lombardia" },
-  { "city": "Cuneo", "province": "CN", "region": "Piemonte" },
-  { "city": "Ferrara", "province": "FE", "region": "Emilia-Romagna" },
-  { "city": "Firenze", "province": "FI", "region": "Toscana" },
-  { "city": "Foggia", "province": "FG", "region": "Puglia" },
-  { "city": "Forlì", "province": "FC", "region": "Emilia-Romagna" },
-  { "city": "Genova", "province": "GE", "region": "Liguria" },
-  { "city": "Grosseto", "province": "GR", "region": "Toscana" },
-  { "city": "La Spezia", "province": "SP", "region": "Liguria" },
-  { "city": "Latina", "province": "LT", "region": "Lazio" },
-  { "city": "Lecce", "province": "LE", "region": "Puglia" },
-  { "city": "Livorno", "province": "LI", "region": "Toscana" },
-  { "city": "Lucca", "province": "LU", "region": "Toscana" },
-  { "city": "Mantova", "province": "MN", "region": "Lombardia" },
-  { "city": "Messina", "province": "ME", "region": "Sicilia" },
-  { "city": "Milano", "province": "MI", "region": "Lombardia" },
-  { "city": "Milazzo", "province": "ME", "region": "Sicilia" },
-  { "city": "Modena", "province": "MO", "region": "Emilia-Romagna" },
-  { "city": "Monza", "province": "MB", "region": "Lombardia" },
-  { "city": "Napoli", "province": "NA", "region": "Campania" },
-  { "city": "Novara", "province": "NO", "region": "Piemonte" },
-  { "city": "Padova", "province": "PD", "region": "Veneto" },
-  { "city": "Palermo", "province": "PA", "region": "Sicilia" },
-  { "city": "Parma", "province": "PR", "region": "Emilia-Romagna" },
-  { "city": "Perugia", "province": "PG", "region": "Umbria" },
-  { "city": "Pescara", "province": "PE", "region": "Abruzzo" },
-  { "city": "Piacenza", "province": "PC", "region": "Emilia-Romagna" },
-  { "city": "Pisa", "province": "PI", "region": "Toscana" },
-  { "city": "Pistoia", "province": "PT", "region": "Toscana" },
-  { "city": "Potenza", "province": "PZ", "region": "Basilicata" },
-  { "city": "Prato", "province": "PO", "region": "Toscana" },
-  { "city": "Ravenna", "province": "RA", "region": "Emilia-Romagna" },
-  { "city": "Reggio Calabria", "province": "RC", "region": "Calabria" },
-  { "city": "Reggio Emilia", "province": "RE", "region": "Emilia-Romagna" },
-  { "city": "Rimini", "province": "RN", "region": "Emilia-Romagna" },
-  { "city": "Roma", "province": "RM", "region": "Lazio" },
-  { "city": "Salerno", "province": "SA", "region": "Campania" },
-  { "city": "Sassari", "province": "SS", "region": "Sardegna" },
-  { "city": "Savona", "province": "SV", "region": "Liguria" },
-  { "city": "Siena", "province": "SI", "region": "Toscana" },
-  { "city": "Siracusa", "province": "SR", "region": "Sicilia" },
-  { "city": "Taranto", "province": "TA", "region": "Puglia" },
-  { "city": "Terni", "province": "TR", "region": "Umbria" },
-  { "city": "Torino", "province": "TO", "region": "Piemonte" },
-  { "city": "Trento", "province": "TN", "region": "Trentino-Alto Adige" },
-  { "city": "Treviso", "province": "TV", "region": "Veneto" },
-  { "city": "Trieste", "province": "TS", "region": "Friuli-Venezia Giulia" },
-  { "city": "Udine", "province": "UD", "region": "Friuli-Venezia Giulia" },
-  { "city": "Varese", "province": "VA", "region": "Lombardia" },
-  { "city": "Venezia", "province": "VE", "region": "Veneto" },
-  { "city": "Verona", "province": "VR", "region": "Veneto" },
-  { "city": "Vicenza", "province": "VI", "region": "Veneto" }
+    {
+        "city": "Agrigento",
+        "province": "AG",
+        "region": "Sicilia",
+        "lat": 37.3111,
+        "lng": 13.5765
+    },
+    {
+        "city": "Alessandria",
+        "province": "AL",
+        "region": "Piemonte",
+        "lat": 44.9122,
+        "lng": 8.6151
+    },
+    {
+        "city": "Ancona",
+        "province": "AN",
+        "region": "Marche",
+        "lat": 43.6158,
+        "lng": 13.5189
+    },
+    {
+        "city": "Aosta",
+        "province": "AO",
+        "region": "Valle d'Aosta",
+        "lat": 45.737,
+        "lng": 7.3201
+    },
+    {
+        "city": "Arezzo",
+        "province": "AR",
+        "region": "Toscana",
+        "lat": 43.4633,
+        "lng": 11.8796
+    },
+    {
+        "city": "Asti",
+        "province": "AT",
+        "region": "Piemonte",
+        "lat": 44.9008,
+        "lng": 8.2064
+    },
+    {
+        "city": "Avellino",
+        "province": "AV",
+        "region": "Campania",
+        "lat": 40.9144,
+        "lng": 14.791
+    },
+    {
+        "city": "Bari",
+        "province": "BA",
+        "region": "Puglia",
+        "lat": 41.1171,
+        "lng": 16.8719
+    },
+    {
+        "city": "Bergamo",
+        "province": "BG",
+        "region": "Lombardia",
+        "lat": 45.6983,
+        "lng": 9.6773
+    },
+    {
+        "city": "Bologna",
+        "province": "BO",
+        "region": "Emilia-Romagna",
+        "lat": 44.4949,
+        "lng": 11.3426
+    },
+    {
+        "city": "Bolzano",
+        "province": "BZ",
+        "region": "Trentino-Alto Adige",
+        "lat": 46.4983,
+        "lng": 11.3548
+    },
+    {
+        "city": "Brescia",
+        "province": "BS",
+        "region": "Lombardia",
+        "lat": 45.5416,
+        "lng": 10.2118
+    },
+    {
+        "city": "Cagliari",
+        "province": "CA",
+        "region": "Sardegna",
+        "lat": 39.2238,
+        "lng": 9.1217
+    },
+    {
+        "city": "Catania",
+        "province": "CT",
+        "region": "Sicilia",
+        "lat": 37.5079,
+        "lng": 15.083
+    },
+    {
+        "city": "Catanzaro",
+        "province": "CZ",
+        "region": "Calabria",
+        "lat": 38.9098,
+        "lng": 16.5877
+    },
+    {
+        "city": "Como",
+        "province": "CO",
+        "region": "Lombardia",
+        "lat": 45.8081,
+        "lng": 9.0852
+    },
+    {
+        "city": "Cosenza",
+        "province": "CS",
+        "region": "Calabria",
+        "lat": 39.3099,
+        "lng": 16.2502
+    },
+    {
+        "city": "Cremona",
+        "province": "CR",
+        "region": "Lombardia",
+        "lat": 45.1333,
+        "lng": 10.0227
+    },
+    {
+        "city": "Cuneo",
+        "province": "CN",
+        "region": "Piemonte",
+        "lat": 44.3841,
+        "lng": 7.5427
+    },
+    {
+        "city": "Ferrara",
+        "province": "FE",
+        "region": "Emilia-Romagna",
+        "lat": 44.8381,
+        "lng": 11.6198
+    },
+    {
+        "city": "Firenze",
+        "province": "FI",
+        "region": "Toscana",
+        "lat": 43.7696,
+        "lng": 11.2558
+    },
+    {
+        "city": "Foggia",
+        "province": "FG",
+        "region": "Puglia",
+        "lat": 41.4622,
+        "lng": 15.5446
+    },
+    {
+        "city": "Forlì",
+        "province": "FC",
+        "region": "Emilia-Romagna",
+        "lat": 44.2226,
+        "lng": 12.0407
+    },
+    {
+        "city": "Genova",
+        "province": "GE",
+        "region": "Liguria",
+        "lat": 44.4056,
+        "lng": 8.9463
+    },
+    {
+        "city": "Grosseto",
+        "province": "GR",
+        "region": "Toscana",
+        "lat": 42.7635,
+        "lng": 11.1124
+    },
+    {
+        "city": "La Spezia",
+        "province": "SP",
+        "region": "Liguria",
+        "lat": 44.1025,
+        "lng": 9.8241
+    },
+    {
+        "city": "Latina",
+        "province": "LT",
+        "region": "Lazio",
+        "lat": 41.4675,
+        "lng": 12.9036
+    },
+    {
+        "city": "Lecce",
+        "province": "LE",
+        "region": "Puglia",
+        "lat": 40.3515,
+        "lng": 18.175
+    },
+    {
+        "city": "Livorno",
+        "province": "LI",
+        "region": "Toscana",
+        "lat": 43.5485,
+        "lng": 10.3106
+    },
+    {
+        "city": "Lucca",
+        "province": "LU",
+        "region": "Toscana",
+        "lat": 43.8376,
+        "lng": 10.4951
+    },
+    {
+        "city": "Mantova",
+        "province": "MN",
+        "region": "Lombardia",
+        "lat": 45.1564,
+        "lng": 10.7914
+    },
+    {
+        "city": "Messina",
+        "province": "ME",
+        "region": "Sicilia",
+        "lat": 38.1938,
+        "lng": 15.554
+    },
+    {
+        "city": "Milano",
+        "province": "MI",
+        "region": "Lombardia",
+        "lat": 45.4642,
+        "lng": 9.19
+    },
+    {
+        "city": "Milazzo",
+        "province": "ME",
+        "region": "Sicilia",
+        "lat": 38.217,
+        "lng": 15.24
+    },
+    {
+        "city": "Modena",
+        "province": "MO",
+        "region": "Emilia-Romagna",
+        "lat": 44.6471,
+        "lng": 10.9252
+    },
+    {
+        "city": "Monza",
+        "province": "MB",
+        "region": "Lombardia",
+        "lat": 45.5845,
+        "lng": 9.2744
+    },
+    {
+        "city": "Napoli",
+        "province": "NA",
+        "region": "Campania",
+        "lat": 40.8518,
+        "lng": 14.2681
+    },
+    {
+        "city": "Novara",
+        "province": "NO",
+        "region": "Piemonte",
+        "lat": 45.4469,
+        "lng": 8.6218
+    },
+    {
+        "city": "Padova",
+        "province": "PD",
+        "region": "Veneto",
+        "lat": 45.4064,
+        "lng": 11.8768
+    },
+    {
+        "city": "Palermo",
+        "province": "PA",
+        "region": "Sicilia",
+        "lat": 38.1157,
+        "lng": 13.3615
+    },
+    {
+        "city": "Parma",
+        "province": "PR",
+        "region": "Emilia-Romagna",
+        "lat": 44.8015,
+        "lng": 10.3279
+    },
+    {
+        "city": "Perugia",
+        "province": "PG",
+        "region": "Umbria",
+        "lat": 43.1107,
+        "lng": 12.3908
+    },
+    {
+        "city": "Pescara",
+        "province": "PE",
+        "region": "Abruzzo",
+        "lat": 42.4618,
+        "lng": 14.216
+    },
+    {
+        "city": "Piacenza",
+        "province": "PC",
+        "region": "Emilia-Romagna",
+        "lat": 45.0526,
+        "lng": 9.6929
+    },
+    {
+        "city": "Pisa",
+        "province": "PI",
+        "region": "Toscana",
+        "lat": 43.716,
+        "lng": 10.3966
+    },
+    {
+        "city": "Pistoia",
+        "province": "PT",
+        "region": "Toscana",
+        "lat": 43.9333,
+        "lng": 10.9167
+    },
+    {
+        "city": "Potenza",
+        "province": "PZ",
+        "region": "Basilicata",
+        "lat": 40.6395,
+        "lng": 15.8051
+    },
+    {
+        "city": "Prato",
+        "province": "PO",
+        "region": "Toscana",
+        "lat": 43.8777,
+        "lng": 11.1024
+    },
+    {
+        "city": "Ravenna",
+        "province": "RA",
+        "region": "Emilia-Romagna",
+        "lat": 44.4184,
+        "lng": 12.2035
+    },
+    {
+        "city": "Reggio Calabria",
+        "province": "RC",
+        "region": "Calabria",
+        "lat": 38.1113,
+        "lng": 15.6478
+    },
+    {
+        "city": "Reggio Emilia",
+        "province": "RE",
+        "region": "Emilia-Romagna",
+        "lat": 44.6989,
+        "lng": 10.6297
+    },
+    {
+        "city": "Rimini",
+        "province": "RN",
+        "region": "Emilia-Romagna",
+        "lat": 44.0678,
+        "lng": 12.5695
+    },
+    {
+        "city": "Roma",
+        "province": "RM",
+        "region": "Lazio",
+        "lat": 41.9028,
+        "lng": 12.4964
+    },
+    {
+        "city": "Salerno",
+        "province": "SA",
+        "region": "Campania",
+        "lat": 40.6824,
+        "lng": 14.7681
+    },
+    {
+        "city": "Sassari",
+        "province": "SS",
+        "region": "Sardegna",
+        "lat": 40.7259,
+        "lng": 8.5557
+    },
+    {
+        "city": "Savona",
+        "province": "SV",
+        "region": "Liguria",
+        "lat": 44.3099,
+        "lng": 8.4811
+    },
+    {
+        "city": "Siena",
+        "province": "SI",
+        "region": "Toscana",
+        "lat": 43.3188,
+        "lng": 11.3308
+    },
+    {
+        "city": "Siracusa",
+        "province": "SR",
+        "region": "Sicilia",
+        "lat": 37.0755,
+        "lng": 15.2866
+    },
+    {
+        "city": "Taranto",
+        "province": "TA",
+        "region": "Puglia",
+        "lat": 40.4644,
+        "lng": 17.247
+    },
+    {
+        "city": "Terni",
+        "province": "TR",
+        "region": "Umbria",
+        "lat": 42.5634,
+        "lng": 12.6464
+    },
+    {
+        "city": "Torino",
+        "province": "TO",
+        "region": "Piemonte",
+        "lat": 45.0703,
+        "lng": 7.6869
+    },
+    {
+        "city": "Trento",
+        "province": "TN",
+        "region": "Trentino-Alto Adige",
+        "lat": 46.0748,
+        "lng": 11.1217
+    },
+    {
+        "city": "Treviso",
+        "province": "TV",
+        "region": "Veneto",
+        "lat": 45.6669,
+        "lng": 12.243
+    },
+    {
+        "city": "Trieste",
+        "province": "TS",
+        "region": "Friuli-Venezia Giulia",
+        "lat": 45.6495,
+        "lng": 13.7768
+    },
+    {
+        "city": "Udine",
+        "province": "UD",
+        "region": "Friuli-Venezia Giulia",
+        "lat": 46.0711,
+        "lng": 13.2346
+    },
+    {
+        "city": "Varese",
+        "province": "VA",
+        "region": "Lombardia",
+        "lat": 45.8206,
+        "lng": 8.8251
+    },
+    {
+        "city": "Venezia",
+        "province": "VE",
+        "region": "Veneto",
+        "lat": 45.4408,
+        "lng": 12.3155
+    },
+    {
+        "city": "Verona",
+        "province": "VR",
+        "region": "Veneto",
+        "lat": 45.4384,
+        "lng": 10.9916
+    },
+    {
+        "city": "Vicenza",
+        "province": "VI",
+        "region": "Veneto",
+        "lat": 45.5455,
+        "lng": 11.5354
+    }
 ]

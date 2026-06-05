@@ -17,6 +17,7 @@ class LeadSubmissionService
 {
     public function __construct(
         private readonly ConsentLogService $consentLogService,
+        private readonly LeadInterestAreaService $interestAreaService,
     ) {}
 
     public function submit(StoreLeadRequest $request, ?User $user = null): Lead
@@ -46,6 +47,16 @@ class LeadSubmissionService
             $lead->update([
                 'public_ref' => sprintf('LD-%d', $lead->id),
             ]);
+
+            $interestAreas = is_array($payload['interest_areas'] ?? null)
+                ? $payload['interest_areas']
+                : [];
+
+            $this->interestAreaService->syncFromPayload(
+                $lead,
+                $interestAreas,
+                $payload['location']['label'] ?? null,
+            );
 
             $this->consentLogService->recordLeadSubmissionConsents(
                 $lead,

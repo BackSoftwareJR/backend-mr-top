@@ -46,6 +46,13 @@ class B2bOnboardingConsentTest extends TestCase
         $user = User::query()->where('email', 'consent@struttura.it')->firstOrFail();
         Sanctum::actingAs($user, ['*']);
 
+        $this->putJson('/api/v1/b2b/coverage-zone', [
+            'center_lat' => 41.9028,
+            'center_lng' => 12.4964,
+            'radius_km' => 20,
+            'label' => 'Roma',
+        ])->assertOk();
+
         $response = $this->withHeaders([
             'User-Agent' => 'WenandoB2BTest/1.0',
         ])->postJson('/api/v1/b2b/onboarding/submit', [

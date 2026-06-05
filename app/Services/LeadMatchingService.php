@@ -11,12 +11,14 @@ use App\Models\Lead;
 use App\Models\LeadMatch;
 use App\Models\Sector;
 use App\Support\ItalianLocationParser;
+use App\Support\SpatialMatcher;
 use Illuminate\Support\Facades\DB;
 
 class LeadMatchingService
 {
     public function __construct(
         private readonly ItalianLocationParser $locationParser = new ItalianLocationParser,
+        private readonly SpatialMatcher $spatialMatcher = new SpatialMatcher,
     ) {}
 
     /**
@@ -25,7 +27,11 @@ class LeadMatchingService
     public function matchLead(Lead $lead, bool $preserveManualLock = true): array
     {
         return DB::transaction(function () use ($lead, $preserveManualLock): array {
-            $lead = Lead::query()->whereKey($lead->id)->lockForUpdate()->firstOrFail();
+            $lead = Lead::query()
+                ->with('interestAreas')
+                ->whereKey($lead->id)
+                ->lockForUpdate()
+                ->firstOrFail();
             $sector = Sector::query()->findOrFail($lead->sector_id);
             $rules = $sector->matching_rules ?? [];
             $defaultUnlock = (int) ($rules['default_unlock_cost'] ?? 15);
@@ -48,7 +54,7 @@ class LeadMatchingService
                 ->delete();
 
             $companies = Company::query()
-                ->with('latestTrustScore')
+                ->with(['latestTrustScore', 'coverageZone'])
                 ->where('sector_id', $lead->sector_id)
                 ->where('vetting_status', VettingStatus::Approved)
                 ->when($manualIds !== [], fn ($q) => $q->whereNotIn('id', $manualIds))
@@ -56,11 +62,22 @@ class LeadMatchingService
 
             $scored = [];
             foreach ($companies as $company) {
-                $score = $this->scoreCompany($lead, $company, $rules);
+                $geoResult = $this->geoScore($lead, $company);
+                if ($geoResult['score'] <= 0) {
+                    continue;
+                }
+
+                $score = $this->scoreCompany($lead, $company, $rules, $geoResult['score']);
                 if ($score <= 0) {
                     continue;
                 }
-                $scored[] = ['company' => $company, 'score' => $score];
+
+                $scored[] = [
+                    'company' => $company,
+                    'score' => $score,
+                    'spatial_match' => $geoResult['spatial_match'],
+                    'distance_km' => $geoResult['distance_km'],
+                ];
             }
 
             usort($scored, fn (array $a, array $b): int => $b['score'] <=> $a['score']);
@@ -78,9 +95,11 @@ class LeadMatchingService
                     'is_visible_to_consumer' => $score >= $minB2c && $rank <= $maxB2c,
                     'is_in_marketplace' => $score >= $minMarketplace,
                     'unlock_cost_credits' => $defaultUnlock,
-                    'metadata' => [
+                    'metadata' => array_filter([
                         'ai_match_label' => sprintf('%s (%d%%)', $company->organization_name, $score),
-                    ],
+                        'spatial_match' => $item['spatial_match'],
+                        'distance_km' => $item['distance_km'],
+                    ], fn ($value) => $value !== null),
                 ]);
                 $matches[] = $match;
                 $rank++;
@@ -95,7 +114,7 @@ class LeadMatchingService
     /**
      * @param  array<string, mixed>  $rules
      */
-    private function scoreCompany(Lead $lead, Company $company, array $rules): int
+    private function scoreCompany(Lead $lead, Company $company, array $rules, int $geo): int
     {
         $weights = $rules['weights'] ?? [
             'budget_overlap' => 0.25,
@@ -105,11 +124,6 @@ class LeadMatchingService
             'capacity' => 0.10,
             'operational_bonus' => 0.05,
         ];
-
-        $geo = $this->geoScore($lead, $company);
-        if ($geo <= 0) {
-            return 0;
-        }
 
         $factors = [
             'budget_overlap' => $this->budgetScore($lead, $company),
@@ -126,6 +140,51 @@ class LeadMatchingService
         }
 
         return (int) round(min(100, max(0, $total)));
+    }
+
+    /**
+     * @return array{score: int, spatial_match: bool, distance_km: float|null}
+     */
+    private function geoScore(Lead $lead, Company $company): array
+    {
+        $coverage = $company->coverageZone;
+        $interestAreas = $lead->interestAreas;
+
+        if ($coverage !== null && $interestAreas->isNotEmpty()) {
+            $bestDistance = null;
+
+            foreach ($interestAreas as $interest) {
+                if (! $this->spatialMatcher->coverageOverlapsInterestArea($coverage, $interest)) {
+                    continue;
+                }
+
+                $distance = $this->spatialMatcher->haversineDistanceKm(
+                    (float) $coverage->center_lat,
+                    (float) $coverage->center_lng,
+                    (float) $interest->center_lat,
+                    (float) $interest->center_lng,
+                );
+
+                $bestDistance = $bestDistance === null
+                    ? $distance
+                    : min($bestDistance, $distance);
+
+                return [
+                    'score' => 100,
+                    'spatial_match' => true,
+                    'distance_km' => round($bestDistance, 1),
+                ];
+            }
+
+            return ['score' => 0, 'spatial_match' => false, 'distance_km' => null];
+        }
+
+        $textScore = $this->locationParser->bestGeoScore(
+            $lead->location_label,
+            $this->companyLocationLabels($company),
+        );
+
+        return ['score' => $textScore, 'spatial_match' => false, 'distance_km' => null];
     }
 
     private function budgetScore(Lead $lead, Company $company): int
@@ -180,14 +239,6 @@ class LeadMatchingService
         }
 
         return [$min, $max];
-    }
-
-    private function geoScore(Lead $lead, Company $company): int
-    {
-        return $this->locationParser->bestGeoScore(
-            $lead->location_label,
-            $this->companyLocationLabels($company),
-        );
     }
 
     /**

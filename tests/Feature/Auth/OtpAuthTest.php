@@ -169,4 +169,24 @@ class OtpAuthTest extends TestCase
         ])->assertStatus(403)
             ->assertJsonPath('error.code', 'WRONG_PORTAL');
     }
+
+    public function test_admin_portal_accepts_superadmin_with_non_heuristic_email(): void
+    {
+        Mail::fake();
+
+        User::factory()->create([
+            'email' => 'jrovera05@gmail.com',
+            'user_type' => UserType::Superadmin,
+        ]);
+
+        $this->postJson('/api/v1/auth/otp/request', [
+            'email' => 'jrovera05@gmail.com',
+            'portal' => 'admin',
+            'captcha' => $this->captchaPayload(),
+        ])
+            ->assertOk()
+            ->assertJsonPath('success', true);
+
+        Mail::assertSent(OtpMail::class, fn (OtpMail $mail): bool => $mail->hasTo('jrovera05@gmail.com'));
+    }
 }

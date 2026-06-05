@@ -36,6 +36,7 @@ class AppointmentsController extends Controller
                 'date' => $a->scheduled_date?->toDateString(),
                 'time' => $a->scheduled_time,
                 'note' => $a->note,
+                'checklist' => $a->checklist ?? [],
             ])->values()->all(),
         ]);
     }
@@ -63,8 +64,37 @@ class AppointmentsController extends Controller
                 'id' => $result['appointment']->id,
                 'date' => $result['appointment']->scheduled_date?->toDateString(),
                 'time' => $result['appointment']->scheduled_time,
+                'checklist' => $result['appointment']->checklist ?? [],
             ],
             'client' => new CrmClientResource($result['client']),
+        ]);
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $validated = $request->validate([
+            'note' => ['nullable', 'string', 'max:2000'],
+            'date' => ['nullable', 'date'],
+            'time' => ['nullable', 'string', 'max:16'],
+            'checklist' => ['nullable', 'array'],
+            'checklist.*.id' => ['required_with:checklist', 'string', 'max:64'],
+            'checklist.*.label' => ['required_with:checklist', 'string', 'max:255'],
+            'checklist.*.done' => ['required_with:checklist', 'boolean'],
+        ]);
+
+        $company = $this->onboardingService->companyForUser($request->user());
+        $appointment = $this->appointmentService->update($company, $id, $validated);
+
+        return ApiEnvelope::success([
+            'appointment' => [
+                'id' => $appointment->id,
+                'client_id' => 'CRM-'.$appointment->lead_match_id,
+                'cliente' => $appointment->client_name,
+                'date' => $appointment->scheduled_date?->toDateString(),
+                'time' => $appointment->scheduled_time,
+                'note' => $appointment->note,
+                'checklist' => $appointment->checklist ?? [],
+            ],
         ]);
     }
 }

@@ -7,6 +7,7 @@ namespace Tests\Feature\B2B;
 use App\Models\Sector;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -49,6 +50,28 @@ class B2bOnboardingRateLimitTest extends TestCase
     {
         $user = $this->registerPartner('submit-limit@struttura.it');
         Sanctum::actingAs($user, ['*']);
+
+        $this->patchJson('/api/v1/b2b/onboarding', [
+            'vat' => 'IT12345678901',
+            'sdi' => 'ABCDEFG',
+        ])->assertOk();
+
+        $this->post('/api/v1/b2b/onboarding/documents', [
+            'type' => 'visura',
+            'file' => UploadedFile::fake()->create('visura.pdf', 128, 'application/pdf'),
+        ])->assertOk();
+
+        $this->post('/api/v1/b2b/onboarding/documents', [
+            'type' => 'identity',
+            'file' => UploadedFile::fake()->create('identity.pdf', 64, 'application/pdf'),
+        ])->assertOk();
+
+        $this->putJson('/api/v1/b2b/coverage-zone', [
+            'center_lat' => 41.9028,
+            'center_lng' => 12.4964,
+            'radius_km' => 20,
+            'label' => 'Roma',
+        ])->assertOk();
 
         $payload = [
             'terms_b2b_accepted' => true,

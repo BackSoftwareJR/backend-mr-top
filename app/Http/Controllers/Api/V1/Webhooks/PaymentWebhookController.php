@@ -13,6 +13,7 @@ use App\Models\PaymentIntent;
 use App\Services\AuditLogService;
 use App\Services\PaymentIntentService;
 use App\Services\WebhookEventService;
+use App\Support\CentralLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Throwable;
@@ -119,6 +120,17 @@ class PaymentWebhookController extends Controller
             ]);
         } catch (Throwable $exception) {
             $this->webhookEventService->markFailed($webhookEvent);
+
+            CentralLog::webhook(
+                'webhook.processing_failed',
+                [
+                    'provider' => $provider,
+                    'event_type' => $eventType,
+                    'webhook_event_id' => $webhookEvent->id,
+                ],
+                'error',
+                $exception,
+            );
 
             throw $exception;
         }
