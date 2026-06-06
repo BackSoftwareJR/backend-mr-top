@@ -12,6 +12,7 @@ use App\Models\EditorialContent;
 use App\Models\EditorialModerationQueue;
 use App\Models\EditorialWorkflowEvent;
 use App\Models\User;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 
 class EditorialWorkflowService
@@ -77,7 +78,13 @@ class EditorialWorkflowService
                 'note' => $note,
             ]);
 
-            return $content->fresh(['rubric', 'moderationQueueEntry', 'company']);
+            $fresh = $content->fresh(['rubric', 'moderationQueueEntry', 'company']);
+
+            if ($toStatus === EditorialContentStatus::Published) {
+                $this->regeneratePublicFeeds();
+            }
+
+            return $fresh;
         });
     }
 
@@ -196,5 +203,11 @@ class EditorialWorkflowService
             'assigned_reviewer_id' => $actor->id,
             'resolved_at' => now(),
         ]);
+    }
+
+    private function regeneratePublicFeeds(): void
+    {
+        Artisan::call('editorial:generate-sitemaps');
+        Artisan::call('editorial:generate-llms-txt');
     }
 }

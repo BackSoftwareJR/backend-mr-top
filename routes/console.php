@@ -15,3 +15,11 @@ Schedule::command('consent-logs:anonymize-retention')
 Schedule::command('leads:anonymize-stale')
     ->monthlyOn(1, '03:00')
     ->timezone('Europe/Rome');
+
+Schedule::command('editorial:generate-sitemaps')
+    ->dailyAt('02:00')
+    ->timezone('Europe/Rome');
+
+Schedule::command('editorial:generate-llms-txt')
+    ->weeklyOn(1, '02:30')
+    ->timezone('Europe/Rome');
