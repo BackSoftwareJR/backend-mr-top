@@ -95,6 +95,8 @@ Route::prefix('v1')->group(function (): void {
 
         Route::post('/nando/refine', [NandoController::class, 'refine'])
             ->middleware('throttle:nando-refine');
+        Route::get('/nando/editorial-context', [NandoController::class, 'editorialContext'])
+            ->middleware('throttle:nando-refine');
 
         Route::post('/search/orchestrate', [B2CSearchController::class, 'orchestrate'])
             ->middleware('throttle:search-orchestrate');

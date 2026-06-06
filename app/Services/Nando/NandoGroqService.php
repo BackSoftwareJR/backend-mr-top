@@ -28,6 +28,8 @@ Restituisci SOLO un oggetto JSON valido con questa struttura:
   "complete": false
 }
 Quando hai raccolto abbastanza informazioni, imposta question=null e complete=true.
+Se nel payload è presente editorial_context (array di articoli con title, excerpt, url), puoi citare solo quegli URL esatti per approfondimenti editoriali.
+Non inventare mai articoli, titoli o URL non presenti in editorial_context.
 PROMPT;
 
     public function isConfigured(): bool
@@ -40,6 +42,7 @@ PROMPT;
     /**
      * @param  array<string, mixed>  $selections
      * @param  list<array<string, mixed>>  $refinementHistory
+     * @param  list<array{title: string, excerpt: string, url: string, rubric: string, type: string, relevance_score: float}>  $editorialContext
      * @return ?array{pageTitle: string, supported: bool, question: ?array<string, mixed>, complete: bool}
      */
     public function refine(
@@ -47,6 +50,7 @@ PROMPT;
         array $selections,
         ?string $customNotes,
         array $refinementHistory,
+        array $editorialContext = [],
     ): ?array {
         if (! $this->isConfigured()) {
             return null;
@@ -62,6 +66,10 @@ PROMPT;
             'customNotes' => $customNotes ?? '',
             'refinementHistory' => $refinementHistory,
         ];
+
+        if ($editorialContext !== []) {
+            $userPayload['editorial_context'] = $editorialContext;
+        }
 
         try {
             $response = Http::withToken($apiKey)

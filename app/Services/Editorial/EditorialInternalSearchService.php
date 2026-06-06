@@ -17,8 +17,19 @@ class EditorialInternalSearchService
      */
     public function search(?string $query, ?string $type, ?string $rubric, int $limit = 10): array
     {
+        return array_map(
+            static fn (array $row): EditorialContent => $row['content'],
+            $this->searchRanked($query ?? '', $limit, $type, $rubric),
+        );
+    }
+
+    /**
+     * @return list<array{content: EditorialContent, relevance_score: float}>
+     */
+    public function searchRanked(string $query, int $limit = 10, ?string $type = null, ?string $rubric = null): array
+    {
         $limit = max(1, min($limit, 20));
-        $tokens = $this->tokenize($query ?? '');
+        $tokens = $this->tokenize($query);
 
         $documents = $this->baseQuery($type, $rubric)
             ->when($tokens !== [], fn (Builder $builder) => $this->applyTextFilter($builder, $tokens))
@@ -30,8 +41,8 @@ class EditorialInternalSearchService
             return [];
         }
 
-        $scored = $documents
-            ->map(function (EditorialSearchDocument $document) use ($tokens, $rubric): array {
+        return $documents
+            ->map(function (EditorialSearchDocument $document) use ($tokens, $rubric): ?array {
                 $content = $document->content;
 
                 if ($content === null) {
@@ -40,16 +51,16 @@ class EditorialInternalSearchService
 
                 return [
                     'content' => $content,
-                    'score' => $this->scoreDocument($document, $content, $tokens, $rubric),
+                    'relevance_score' => round(
+                        $this->scoreDocument($document, $content, $tokens, $rubric),
+                        4,
+                    ),
                 ];
             })
             ->filter()
-            ->sortByDesc('score')
+            ->sortByDesc('relevance_score')
             ->values()
-            ->take($limit);
-
-        return $scored
-            ->map(static fn (array $row): EditorialContent => $row['content'])
+            ->take($limit)
             ->all();
     }
 
