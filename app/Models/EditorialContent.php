@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 #[Fillable([
     'slug',
@@ -208,5 +209,17 @@ class EditorialContent extends Model
     public function searchDocument(): HasOne
     {
         return $this->hasOne(EditorialSearchDocument::class, 'content_id');
+    }
+
+    /**
+     * @param  Builder<EditorialContent>  $query
+     * @return Builder<EditorialContent>
+     */
+    public function scopePublished(Builder $query): Builder
+    {
+        return $query
+            ->where('status', EditorialContentStatus::Published)
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 }

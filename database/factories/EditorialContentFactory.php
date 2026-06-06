@@ -8,6 +8,8 @@ use App\Enums\EditorialAuthorType;
 use App\Enums\EditorialContentStatus;
 use App\Enums\EditorialContentType;
 use App\Models\EditorialContent;
+use App\Models\EditorialMedia;
+use App\Models\EditorialRubric;
 use App\Models\Sector;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -68,5 +70,28 @@ class EditorialContentFactory extends Factory
             'locale' => 'it-IT',
             'canonical_path' => '/magazine/articoli/'.$slug,
         ];
+    }
+
+    public function published(): static
+    {
+        return $this->state(fn () => [
+            'status' => EditorialContentStatus::Published,
+            'published_at' => now()->subDay(),
+        ]);
+    }
+
+    public function withRubric(EditorialRubric $rubric): static
+    {
+        return $this->state(fn () => [
+            'rubric_id' => $rubric->id,
+            'rubric_slug' => $rubric->slug,
+        ]);
+    }
+
+    public function withHeroMedia(EditorialMedia $media): static
+    {
+        return $this->state(fn () => [
+            'hero_media_id' => $media->id,
+        ]);
     }
 }

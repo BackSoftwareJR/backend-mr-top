@@ -29,6 +29,7 @@ use App\Http\Controllers\Api\V1\B2B\RegisterController;
 use App\Http\Controllers\Api\V1\B2B\SmartCrmController;
 use App\Http\Controllers\Api\V1\B2B\WalletController;
 use App\Http\Controllers\Api\V1\B2C\AdvisorController;
+use App\Http\Controllers\Api\V1\B2C\EditorialController;
 use App\Http\Controllers\Api\V1\B2C\LeadResultsController;
 use App\Http\Controllers\Api\V1\B2C\LeadSubmissionController;
 use App\Http\Controllers\Api\V1\B2C\LocationsController;
@@ -97,6 +98,12 @@ Route::prefix('v1')->group(function (): void {
 
         Route::get('/search/editorial', [B2CSearchController::class, 'editorial'])
             ->middleware('throttle:search-editorial');
+
+        Route::prefix('editorial')->middleware('throttle:search-editorial')->group(function (): void {
+            Route::get('/contents', [EditorialController::class, 'index']);
+            Route::get('/contents/{slug}', [EditorialController::class, 'show']);
+            Route::get('/rubrics', [EditorialController::class, 'rubrics']);
+        });
 
         Route::post('/search/contact-intent', [B2CSearchController::class, 'contactIntent'])
             ->middleware('throttle:wizard-submit');
