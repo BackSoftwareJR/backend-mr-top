@@ -93,6 +93,17 @@ class EditorialContentPolicy
         return $this->isAdmin($user) || $user->hasPermission('editorial.seo.approve');
     }
 
+    public function regenerateSeo(User $user, EditorialContent $content): bool
+    {
+        if ($this->isAdmin($user)) {
+            return true;
+        }
+
+        return $user->hasPermission('editorial.seo.approve')
+            || $user->hasPermission('editorial.moderate')
+            || $user->hasPermission('editorial.publish');
+    }
+
     public function manageIndex(User $user): bool
     {
         return $this->isAdmin($user) || $user->hasPermission('editorial.index.manage');

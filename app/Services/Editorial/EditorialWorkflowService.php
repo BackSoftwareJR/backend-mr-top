@@ -7,6 +7,7 @@ namespace App\Services\Editorial;
 use App\Enums\EditorialContentStatus;
 use App\Enums\EditorialModerationStatus;
 use App\Exceptions\ApiException;
+use App\Jobs\GenerateEditorialSeoJob;
 use App\Models\EditorialContent;
 use App\Models\EditorialModerationQueue;
 use App\Models\EditorialWorkflowEvent;
@@ -15,6 +16,9 @@ use Illuminate\Support\Facades\DB;
 
 class EditorialWorkflowService
 {
+    public function __construct(
+        private readonly EditorialSeoService $seoService,
+    ) {}
     /**
      * @var array<string, list<string>>
      */
@@ -53,6 +57,10 @@ class EditorialWorkflowService
                     'to_status' => $toStatus->value,
                 ],
             );
+        }
+
+        if ($toStatus === EditorialContentStatus::Published) {
+            $this->seoService->assertCanPublish($content->load('seoGenerations'), $actor);
         }
 
         return DB::transaction(function () use ($content, $fromStatus, $toStatus, $actor, $note): EditorialContent {
@@ -119,6 +127,7 @@ class EditorialWorkflowService
 
         if ($toStatus === EditorialContentStatus::PendingReview) {
             $this->upsertModerationQueue($content, $actor, EditorialModerationStatus::Pending);
+            GenerateEditorialSeoJob::dispatch($content->id);
 
             return;
         }

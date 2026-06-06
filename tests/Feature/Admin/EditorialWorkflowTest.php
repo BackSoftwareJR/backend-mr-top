@@ -8,10 +8,12 @@ use App\Enums\EditorialAuthorType;
 use App\Enums\EditorialContentStatus;
 use App\Enums\EditorialContentType;
 use App\Enums\EditorialModerationStatus;
+use App\Enums\EditorialSeoGenerationStatus;
 use App\Enums\UserType;
 use App\Models\Company;
 use App\Models\EditorialContent;
 use App\Models\EditorialRubric;
+use App\Models\EditorialSeoGeneration;
 use App\Models\Permission;
 use App\Models\Role;
 use App\Models\Sector;
@@ -43,6 +45,12 @@ class EditorialWorkflowTest extends TestCase
         $this->seedEditorialPermissions();
 
         $this->rubric = EditorialRubric::query()->where('slug', 'guide')->firstOrFail();
+
+        config([
+            'editorial.seo.min_score' => 70,
+            'editorial.seo.require_seo_approval' => true,
+            'editorial.seo.superadmin_bypass' => false,
+        ]);
     }
 
     public function test_draft_to_pending_review_to_published_happy_path_records_workflow_events(): void
@@ -68,6 +76,10 @@ class EditorialWorkflowTest extends TestCase
 
         $content->refresh();
         $this->assertSame(EditorialContentStatus::PendingReview, $content->status);
+
+        $this->seedApprovedSeo($content, $chief);
+
+        $content->refresh();
 
         $this->postJson('/api/v1/admin/editorial/contents/'.$content->uuid.'/transition', [
             'to_status' => EditorialContentStatus::Published->value,
@@ -142,6 +154,10 @@ class EditorialWorkflowTest extends TestCase
             'rubric_slug' => $this->rubric->slug,
             'status' => EditorialContentStatus::PendingReview,
         ]);
+
+        $this->seedApprovedSeo($content, $chief);
+
+        $content->refresh();
 
         $this->postJson('/api/v1/admin/editorial/contents/'.$content->uuid.'/transition', [
             'to_status' => EditorialContentStatus::Published->value,
@@ -322,6 +338,8 @@ class EditorialWorkflowTest extends TestCase
 
     public function test_superadmin_can_direct_publish_from_draft(): void
     {
+        config(['editorial.seo.superadmin_bypass' => true]);
+
         $admin = User::factory()->create(['user_type' => UserType::Superadmin]);
         Sanctum::actingAs($admin);
 
@@ -337,6 +355,33 @@ class EditorialWorkflowTest extends TestCase
         ])
             ->assertOk()
             ->assertJsonPath('data.content.status', 'published');
+    }
+
+    private function seedApprovedSeo(EditorialContent $content, User $actor): void
+    {
+        $seoPack = [
+            'version' => 3,
+            'approved' => true,
+            'approved_by_user_id' => $actor->id,
+            'approved_at' => now()->toIso8601String(),
+            'seo_title' => 'Badante convivente: costi reali e trappole da evitare nel 2026',
+            'seo_description' => 'Rete, contributi e costi nascosti della badante convivente spiegati con chiarezza. Checklist anti-truffe e domande da fare prima di firmare un contratto.',
+            'excerpt' => 'Guida completa ai costi della badante convivente.',
+            'primary_keyword' => 'costo badante convivente',
+            'seo_score' => 85,
+        ];
+
+        EditorialSeoGeneration::query()->create([
+            'content_id' => $content->id,
+            'seo_pack' => $seoPack,
+            'score' => 85,
+            'status' => EditorialSeoGenerationStatus::Approved,
+            'reviewed_by_user_id' => $actor->id,
+            'reviewed_at' => now(),
+            'prompt_version' => 'editorial-seo-v1',
+        ]);
+
+        $content->update(['seo_pack' => $seoPack]);
     }
 
     private function userWithRole(string $roleName): User

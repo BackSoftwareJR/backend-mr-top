@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
 use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
+use App\Http\Controllers\Api\V1\Admin\EditorialSeoController;
 use App\Http\Controllers\Api\V1\Admin\EditorialWorkflowController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\CompanyVettingController;
@@ -228,6 +229,10 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/contents/{uuid}/revisions', [EditorialContentController::class, 'listRevisions']);
         Route::post('/contents/{uuid}/transition', [EditorialWorkflowController::class, 'transition']);
         Route::get('/review-queue', [EditorialWorkflowController::class, 'reviewQueue']);
+        Route::get('/contents/{uuid}/seo', [EditorialSeoController::class, 'show']);
+        Route::post('/contents/{uuid}/seo/regenerate', [EditorialSeoController::class, 'regenerate']);
+        Route::post('/contents/{uuid}/seo/approve', [EditorialSeoController::class, 'approve']);
+        Route::post('/contents/{uuid}/seo/reject', [EditorialSeoController::class, 'reject']);
     });
 
     /*
