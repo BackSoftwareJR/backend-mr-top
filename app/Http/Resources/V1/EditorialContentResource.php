@@ -12,10 +12,20 @@ class EditorialContentResource extends JsonResource
 {
     public bool $slim = false;
 
+    public bool $forPartner = false;
+
     public static function slim(mixed $resource): self
     {
         $instance = new self($resource);
         $instance->slim = true;
+
+        return $instance;
+    }
+
+    public static function forPartner(mixed $resource): self
+    {
+        $instance = new self($resource);
+        $instance->forPartner = true;
 
         return $instance;
     }
@@ -81,6 +91,19 @@ class EditorialContentResource extends JsonResource
             'created_at' => $content->created_at?->toIso8601String(),
             'updated_at' => $content->updated_at?->toIso8601String(),
             'deleted_at' => $content->deleted_at?->toIso8601String(),
+            ...($this->forPartner ? $this->structureMeta($content) : []),
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function structureMeta(EditorialContent $content): array
+    {
+        return [
+            'is_structure_content' => true,
+            'author_badge' => $content->company?->organization_name,
+            'structure_disclaimer' => (string) config('editorial.structure_disclaimer'),
         ];
     }
 }

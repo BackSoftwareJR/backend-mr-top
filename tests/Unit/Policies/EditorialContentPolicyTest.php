@@ -105,6 +105,13 @@ class EditorialContentPolicyTest extends TestCase
         $this->assertTrue($this->policy->update($partner, $ownDraft));
         $this->assertFalse($this->policy->update($partner, $ownPublished));
         $this->assertFalse($this->policy->publish($partner, $ownDraft));
+
+        $ownRejected = $this->makeContent([
+            'company_id' => $company->id,
+            'author_type' => EditorialAuthorType::Company,
+            'status' => EditorialContentStatus::Rejected,
+        ]);
+        $this->assertTrue($this->policy->update($partner, $ownRejected));
     }
 
     public function test_partner_cannot_access_other_company_content(): void

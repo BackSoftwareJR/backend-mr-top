@@ -166,7 +166,13 @@ class EditorialContentPolicy
 
     private function partnerOwnsDraft(User $user, EditorialContent $content): bool
     {
-        return $this->partnerOwnsContent($user, $content)
-            && $content->status === EditorialContentStatus::Draft;
+        if (! $this->partnerOwnsContent($user, $content)) {
+            return false;
+        }
+
+        return in_array($content->status, [
+            EditorialContentStatus::Draft,
+            EditorialContentStatus::Rejected,
+        ], true);
     }
 }

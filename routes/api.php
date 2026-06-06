@@ -24,7 +24,7 @@ use App\Http\Controllers\Api\V1\B2B\AuthController as B2BAuthController;
 use App\Http\Controllers\Api\V1\B2B\CompanyProfileController;
 use App\Http\Controllers\Api\V1\B2B\CoverageZoneController;
 use App\Http\Controllers\Api\V1\B2B\CrmController;
-use App\Http\Controllers\Api\V1\B2B\DashboardController as B2BDashboardController;
+use App\Http\Controllers\Api\V1\B2B\EditorialContentController as B2BEditorialContentController;
 use App\Http\Controllers\Api\V1\B2B\LeadMarketplaceController;
 use App\Http\Controllers\Api\V1\B2B\OnboardingController;
 use App\Http\Controllers\Api\V1\B2B\RegisterController;
@@ -211,6 +211,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/notifications', [B2BDashboardController::class, 'notifications']);
             Route::patch('/notifications/{id}/read', [B2BDashboardController::class, 'markNotificationRead']);
             Route::post('/notifications/read-all', [B2BDashboardController::class, 'markAllNotificationsRead']);
+
+            Route::prefix('editorial')->group(function (): void {
+                Route::get('/contents', [B2BEditorialContentController::class, 'index']);
+                Route::post('/contents', [B2BEditorialContentController::class, 'store']);
+                Route::get('/contents/{uuid}', [B2BEditorialContentController::class, 'show']);
+                Route::patch('/contents/{uuid}', [B2BEditorialContentController::class, 'update']);
+                Route::post('/contents/{uuid}/submit', [B2BEditorialContentController::class, 'submit']);
+            });
         });
     });
 
