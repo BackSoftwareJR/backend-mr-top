@@ -32,6 +32,7 @@ use App\Http\Controllers\Api\V1\B2C\LeadResultsController;
 use App\Http\Controllers\Api\V1\B2C\LeadSubmissionController;
 use App\Http\Controllers\Api\V1\B2C\LocationsController;
 use App\Http\Controllers\Api\V1\B2C\NandoController;
+use App\Http\Controllers\Api\V1\B2C\SearchController as B2CSearchController;
 use App\Http\Controllers\Api\V1\B2C\WizardController;
 use App\Http\Controllers\Api\V1\ConsentController;
 use App\Http\Controllers\Api\V1\GeoController;
@@ -89,6 +90,15 @@ Route::prefix('v1')->group(function (): void {
 
         Route::post('/nando/refine', [NandoController::class, 'refine'])
             ->middleware('throttle:nando-refine');
+
+        Route::post('/search/orchestrate', [B2CSearchController::class, 'orchestrate'])
+            ->middleware('throttle:search-orchestrate');
+
+        Route::get('/search/editorial', [B2CSearchController::class, 'editorial'])
+            ->middleware('throttle:search-editorial');
+
+        Route::post('/search/contact-intent', [B2CSearchController::class, 'contactIntent'])
+            ->middleware('throttle:wizard-submit');
 
         Route::post('/leads', [LeadSubmissionController::class, 'store'])
             ->middleware('throttle:wizard-submit');

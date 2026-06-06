@@ -139,6 +139,14 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by($request->ip());
         });
 
+        RateLimiter::for('search-orchestrate', function (Request $request) {
+            return Limit::perMinute(30)->by($request->ip());
+        });
+
+        RateLimiter::for('search-editorial', function (Request $request) {
+            return Limit::perMinute(60)->by($request->ip());
+        });
+
         RateLimiter::for('b2b-onboarding', function (Request $request) {
             $user = $request->user();
             $companyId = $user?->companies()->value('companies.id');
