@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 return [
 
+    'site_url' => env('EDITORIAL_SITE_URL', env('APP_URL', 'https://wenando.com')),
+
     'structure_disclaimer' => 'Contenuto redatto dalla struttura. Wenando non garantisce l\'accuratezza delle informazioni e non sostituisce consulenza medica o professionale.',
 
     'seo' => [

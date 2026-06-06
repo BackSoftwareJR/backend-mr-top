@@ -67,6 +67,21 @@ class EditorialContentQueryService
             ->first();
     }
 
+    public function findPublishedByRubricAndSlug(string $rubricSlug, string $slug): ?EditorialContent
+    {
+        return EditorialContent::query()
+            ->published()
+            ->where('noindex', false)
+            ->where('slug', $slug)
+            ->where(function (Builder $query) use ($rubricSlug): void {
+                $query
+                    ->where('rubric_slug', $rubricSlug)
+                    ->orWhereHas('rubric', fn (Builder $rubricQuery) => $rubricQuery->where('slug', $rubricSlug));
+            })
+            ->with(['rubric', 'heroMedia', 'authors.avatarMedia', 'company'])
+            ->first();
+    }
+
     /**
      * @return Builder<EditorialContent>
      */
