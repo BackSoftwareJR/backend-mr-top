@@ -9,7 +9,9 @@ use App\Models\EditorialContent;
 use App\Services\Editorial\EditorialBlockRenderer;
 use App\Services\Editorial\EditorialContentQueryService;
 use App\Services\Editorial\EditorialJsonLdBuilder;
+use App\Services\Editorial\EditorialViewTracker;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class EditorialPageController extends Controller
@@ -18,6 +20,7 @@ class EditorialPageController extends Controller
         private readonly EditorialContentQueryService $queryService,
         private readonly EditorialBlockRenderer $blockRenderer,
         private readonly EditorialJsonLdBuilder $jsonLdBuilder,
+        private readonly EditorialViewTracker $viewTracker,
     ) {}
 
     public function hub(): View
@@ -32,13 +35,15 @@ class EditorialPageController extends Controller
         ]);
     }
 
-    public function show(string $rubricSlug, string $slug): View|Response
+    public function show(Request $request, string $rubricSlug, string $slug): View|Response
     {
         $content = $this->queryService->findPublishedByRubricAndSlug($rubricSlug, $slug);
 
         if ($content === null) {
             abort(404);
         }
+
+        $this->viewTracker->track($content, $request);
 
         return $this->renderShowView($content);
     }

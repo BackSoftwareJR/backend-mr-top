@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
+use App\Http\Controllers\Api\V1\Admin\AdminEditorialAnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\AdminEditorialMetricsController;
 use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
 use App\Http\Controllers\Api\V1\Admin\EditorialIndexController;
@@ -26,6 +27,7 @@ use App\Http\Controllers\Api\V1\B2B\AuthController as B2BAuthController;
 use App\Http\Controllers\Api\V1\B2B\CompanyProfileController;
 use App\Http\Controllers\Api\V1\B2B\CoverageZoneController;
 use App\Http\Controllers\Api\V1\B2B\CrmController;
+use App\Http\Controllers\Api\V1\B2B\B2BEditorialAnalyticsController;
 use App\Http\Controllers\Api\V1\B2B\EditorialContentController as B2BEditorialContentController;
 use App\Http\Controllers\Api\V1\B2B\LeadMarketplaceController;
 use App\Http\Controllers\Api\V1\B2B\OnboardingController;
@@ -221,6 +223,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/notifications/read-all', [B2BDashboardController::class, 'markAllNotificationsRead']);
 
             Route::prefix('editorial')->group(function (): void {
+                Route::get('/analytics', [B2BEditorialAnalyticsController::class, 'index']);
                 Route::get('/contents', [B2BEditorialContentController::class, 'index']);
                 Route::post('/contents', [B2BEditorialContentController::class, 'store']);
                 Route::get('/contents/{uuid}', [B2BEditorialContentController::class, 'show']);
@@ -236,9 +239,11 @@ Route::prefix('v1')->group(function (): void {
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin/editorial')->middleware(['auth:sanctum', 'throttle:admin'])->group(function (): void {
+        Route::get('/analytics', [AdminEditorialAnalyticsController::class, 'index']);
         Route::get('/metrics', [AdminEditorialMetricsController::class, 'index']);
         Route::get('/contents', [EditorialContentController::class, 'index']);
         Route::post('/contents', [EditorialContentController::class, 'store']);
+        Route::get('/contents/{uuid}/analytics', [AdminEditorialAnalyticsController::class, 'show']);
         Route::get('/contents/{uuid}', [EditorialContentController::class, 'show']);
         Route::patch('/contents/{uuid}', [EditorialContentController::class, 'update']);
         Route::delete('/contents/{uuid}', [EditorialContentController::class, 'destroy']);

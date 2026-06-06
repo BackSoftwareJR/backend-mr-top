@@ -27,3 +27,7 @@ Schedule::command('editorial:generate-llms-txt')
 Schedule::command('editorial:process-index-queue')
     ->everyFiveMinutes()
     ->timezone('Europe/Rome');
+
+Schedule::command('editorial:purge-view-events')
+    ->weeklyOn(1, '03:30')
+    ->timezone('Europe/Rome');

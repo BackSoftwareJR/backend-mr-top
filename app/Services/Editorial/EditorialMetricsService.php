@@ -16,6 +16,10 @@ use Illuminate\Support\Facades\DB;
 
 class EditorialMetricsService
 {
+    public function __construct(
+        private readonly EditorialAnalyticsService $analyticsService,
+    ) {}
+
     /**
      * @return array<string, mixed>
      */
@@ -30,6 +34,7 @@ class EditorialMetricsService
             'top_published_by_type' => $this->topPublishedByType(),
             'searches_count' => $this->searchesCount(),
             'leads_with_email' => $this->leadsWithEmail(),
+            'total_views_30d' => $this->analyticsService->totalViewsLast30Days(),
         ];
     }
 
