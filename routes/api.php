@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
 use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
+use App\Http\Controllers\Api\V1\Admin\EditorialWorkflowController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\CompanyVettingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardStatsController;
@@ -225,6 +226,8 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/contents/{uuid}', [EditorialContentController::class, 'destroy']);
         Route::post('/contents/{uuid}/revisions', [EditorialContentController::class, 'storeRevision']);
         Route::get('/contents/{uuid}/revisions', [EditorialContentController::class, 'listRevisions']);
+        Route::post('/contents/{uuid}/transition', [EditorialWorkflowController::class, 'transition']);
+        Route::get('/review-queue', [EditorialWorkflowController::class, 'reviewQueue']);
     });
 
     /*

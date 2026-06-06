@@ -11,6 +11,7 @@ use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Http\Resources\V1\EditorialContentResource;
 use App\Models\EditorialContent;
 use App\Services\Editorial\EditorialContentService;
+use App\Services\Editorial\EditorialOptimisticLock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -18,6 +19,7 @@ class EditorialContentController extends Controller
 {
     public function __construct(
         private readonly EditorialContentService $editorialContentService,
+        private readonly EditorialOptimisticLock $optimisticLock,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -108,6 +110,7 @@ class EditorialContentController extends Controller
 
         $this->authorize('accessAdmin', EditorialContent::class);
         $this->authorize('update', $content);
+        $this->optimisticLock->assertVersionMatches($content, $request);
 
         $content = $this->editorialContentService->update(
             $content,

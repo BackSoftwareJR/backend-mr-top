@@ -98,6 +98,25 @@ class EditorialContentPolicy
         return $this->isAdmin($user) || $user->hasPermission('editorial.index.manage');
     }
 
+    public function transition(User $user, EditorialContent $content, EditorialContentStatus $toStatus): bool
+    {
+        return match ($toStatus) {
+            EditorialContentStatus::PendingReview => $this->update($user, $content),
+            EditorialContentStatus::Published => $this->publish($user, $content),
+            EditorialContentStatus::Rejected => $this->moderate($user, $content),
+            EditorialContentStatus::Archived => $this->publish($user, $content),
+            EditorialContentStatus::Draft => $this->moderate($user, $content) || $this->update($user, $content),
+            default => false,
+        };
+    }
+
+    public function viewReviewQueue(User $user): bool
+    {
+        return $this->isAdmin($user)
+            || $user->hasPermission('editorial.moderate')
+            || $user->hasPermission('editorial.view');
+    }
+
     private function isAdmin(User $user): bool
     {
         if ($user->user_type === UserType::Superadmin) {
