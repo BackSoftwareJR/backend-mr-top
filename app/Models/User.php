@@ -144,4 +144,15 @@ class User extends Authenticatable
 
         return $this->companies()->first()?->vetting_status?->value;
     }
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->permissions()->where('name', $permission)->exists()) {
+            return true;
+        }
+
+        return $this->roles()
+            ->whereHas('permissions', static fn ($query) => $query->where('name', $permission))
+            ->exists();
+    }
 }

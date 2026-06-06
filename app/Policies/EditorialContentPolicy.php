@@ -14,12 +14,14 @@ class EditorialContentPolicy
 {
     public function viewAny(User $user): bool
     {
-        return $this->isAdmin($user) || $this->isPartner($user);
+        return $this->isAdmin($user)
+            || $user->hasPermission('editorial.view')
+            || $this->isStructureAuthor($user);
     }
 
     public function view(User $user, EditorialContent $content): bool
     {
-        if ($this->isAdmin($user)) {
+        if ($this->isAdmin($user) || $user->hasPermission('editorial.view')) {
             return true;
         }
 
@@ -28,12 +30,14 @@ class EditorialContentPolicy
 
     public function create(User $user): bool
     {
-        return $this->isAdmin($user) || $this->isPartner($user);
+        return $this->isAdmin($user)
+            || $user->hasPermission('editorial.create')
+            || $this->isStructureAuthor($user);
     }
 
     public function update(User $user, EditorialContent $content): bool
     {
-        if ($this->isAdmin($user)) {
+        if ($this->isAdmin($user) || $user->hasPermission('editorial.edit')) {
             return true;
         }
 
@@ -42,17 +46,37 @@ class EditorialContentPolicy
 
     public function delete(User $user, EditorialContent $content): bool
     {
-        return $this->isAdmin($user);
+        return $this->isAdmin($user) || $user->hasPermission('editorial.publish');
     }
 
     public function restore(User $user, EditorialContent $content): bool
     {
-        return $this->isAdmin($user);
+        return $this->delete($user, $content);
     }
 
     public function forceDelete(User $user, EditorialContent $content): bool
     {
         return $this->isAdmin($user);
+    }
+
+    public function publish(User $user, EditorialContent $content): bool
+    {
+        return $this->isAdmin($user) || $user->hasPermission('editorial.publish');
+    }
+
+    public function moderate(User $user, EditorialContent $content): bool
+    {
+        return $this->isAdmin($user) || $user->hasPermission('editorial.moderate');
+    }
+
+    public function approveSeo(User $user, EditorialContent $content): bool
+    {
+        return $this->isAdmin($user) || $user->hasPermission('editorial.seo.approve');
+    }
+
+    public function manageIndex(User $user): bool
+    {
+        return $this->isAdmin($user) || $user->hasPermission('editorial.index.manage');
     }
 
     private function isAdmin(User $user): bool
@@ -61,21 +85,26 @@ class EditorialContentPolicy
             return true;
         }
 
-        return $user->roles()->whereIn('name', ['superadmin', 'super_admin'])->exists();
+        return $user->roles()->whereIn('name', ['superadmin', 'super_admin', 'chief_editor'])->exists();
     }
 
-    private function isPartner(User $user): bool
+    private function isStructureAuthor(User $user): bool
     {
         if ($user->user_type === UserType::B2b) {
             return true;
         }
 
-        return $user->roles()->whereIn('name', ['partner', 'partner_owner', 'partner_staff'])->exists();
+        return $user->roles()->whereIn('name', [
+            'partner',
+            'partner_owner',
+            'partner_staff',
+            'structure_author',
+        ])->exists();
     }
 
     private function partnerOwnsContent(User $user, EditorialContent $content): bool
     {
-        if (! $this->isPartner($user)) {
+        if (! $this->isStructureAuthor($user)) {
             return false;
         }
 

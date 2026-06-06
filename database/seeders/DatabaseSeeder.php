@@ -13,6 +13,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             SectorSeeder::class,
             RolesPermissionsSeeder::class,
+            EditorialRubricSeeder::class,
+            EditorialPermissionSeeder::class,
             AdvisorProfileSeeder::class,
             DemoMatchCompaniesSeeder::class,
             DevUsersSeeder::class,

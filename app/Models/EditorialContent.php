@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 #[Fillable([
@@ -78,6 +80,14 @@ class EditorialContent extends Model
     }
 
     /**
+     * @return BelongsTo<EditorialRubric, $this>
+     */
+    public function rubric(): BelongsTo
+    {
+        return $this->belongsTo(EditorialRubric::class, 'rubric_id');
+    }
+
+    /**
      * @return BelongsTo<Sector, $this>
      */
     public function sector(): BelongsTo
@@ -139,5 +149,64 @@ class EditorialContent extends Model
     public function indexQueueEntries(): HasMany
     {
         return $this->hasMany(EditorialIndexQueue::class);
+    }
+
+    /**
+     * @return BelongsToMany<EditorialAuthor, $this>
+     */
+    public function authors(): BelongsToMany
+    {
+        return $this->belongsToMany(EditorialAuthor::class, 'editorial_content_author')
+            ->withPivot(['sort_order', 'is_primary'])
+            ->withTimestamps()
+            ->orderByPivot('sort_order');
+    }
+
+    /**
+     * @return HasMany<EditorialContentLink, $this>
+     */
+    public function outgoingLinks(): HasMany
+    {
+        return $this->hasMany(EditorialContentLink::class, 'source_content_id');
+    }
+
+    /**
+     * @return HasMany<EditorialContentLink, $this>
+     */
+    public function incomingLinks(): HasMany
+    {
+        return $this->hasMany(EditorialContentLink::class, 'target_content_id');
+    }
+
+    /**
+     * @return HasMany<EditorialWorkflowEvent, $this>
+     */
+    public function workflowEvents(): HasMany
+    {
+        return $this->hasMany(EditorialWorkflowEvent::class, 'content_id')->orderByDesc('created_at');
+    }
+
+    /**
+     * @return HasOne<EditorialModerationQueue, $this>
+     */
+    public function moderationQueueEntry(): HasOne
+    {
+        return $this->hasOne(EditorialModerationQueue::class, 'content_id');
+    }
+
+    /**
+     * @return HasMany<EditorialSeoGeneration, $this>
+     */
+    public function seoGenerations(): HasMany
+    {
+        return $this->hasMany(EditorialSeoGeneration::class, 'content_id')->orderByDesc('created_at');
+    }
+
+    /**
+     * @return HasOne<EditorialSearchDocument, $this>
+     */
+    public function searchDocument(): HasOne
+    {
+        return $this->hasOne(EditorialSearchDocument::class, 'content_id');
     }
 }
