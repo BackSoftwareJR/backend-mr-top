@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('change_summary', 500)->nullable();
             $table->timestamp('created_at')->useCurrent();
 
-            $table->unique(['editorial_content_id', 'revision_number']);
+            $table->unique(['editorial_content_id', 'revision_number'], 'ec_rev_content_num_unique');
             $table->index('editorial_content_id');
         });
     }
