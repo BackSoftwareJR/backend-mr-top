@@ -212,7 +212,17 @@ class EditorialSeoScorer
     public function hasFaqBlocks(array $blocks): bool
     {
         foreach ($blocks as $block) {
-            if (is_array($block) && ($block['type'] ?? '') === 'faq') {
+            if (! is_array($block)) {
+                continue;
+            }
+
+            $type = (string) ($block['type'] ?? '');
+
+            if ($type === 'faq') {
+                return true;
+            }
+
+            if ($type === 'layout' && ($block['data']['template_id'] ?? '') === 'faq-band') {
                 return true;
             }
         }
@@ -229,29 +239,51 @@ class EditorialSeoScorer
         $hints = [];
 
         foreach ($blocks as $block) {
-            if (! is_array($block) || ($block['type'] ?? '') !== 'faq') {
+            if (! is_array($block)) {
                 continue;
             }
 
-            $items = $block['data']['items'] ?? [];
+            $type = (string) ($block['type'] ?? '');
 
-            if (! is_array($items)) {
-                continue;
-            }
+            if ($type === 'faq') {
+                $items = $block['data']['items'] ?? [];
 
-            foreach ($items as $item) {
-                if (! is_array($item)) {
+                if (! is_array($items)) {
                     continue;
                 }
 
-                $question = trim(strip_tags((string) ($item['question'] ?? '')));
-                $answer = trim(strip_tags((string) ($item['answer'] ?? '')));
+                foreach ($items as $item) {
+                    if (! is_array($item)) {
+                        continue;
+                    }
 
-                if ($question !== '' && $answer !== '') {
-                    $hints[] = [
-                        'question' => Str::limit($question, 200, ''),
-                        'answer' => Str::limit($answer, 500, ''),
-                    ];
+                    $question = trim(strip_tags((string) ($item['question'] ?? '')));
+                    $answer = trim(strip_tags((string) ($item['answer'] ?? '')));
+
+                    if ($question !== '' && $answer !== '') {
+                        $hints[] = [
+                            'question' => Str::limit($question, 200, ''),
+                            'answer' => Str::limit($answer, 500, ''),
+                        ];
+                    }
+                }
+
+                continue;
+            }
+
+            if ($type === 'layout' && ($block['data']['template_id'] ?? '') === 'faq-band') {
+                $slots = is_array($block['data']['slots'] ?? null) ? $block['data']['slots'] : [];
+
+                foreach ([['q1', 'a1'], ['q2', 'a2'], ['q3', 'a3']] as [$qKey, $aKey]) {
+                    $question = trim(strip_tags((string) ($slots[$qKey] ?? '')));
+                    $answer = trim(strip_tags((string) ($slots[$aKey] ?? '')));
+
+                    if ($question !== '' && $answer !== '') {
+                        $hints[] = [
+                            'question' => Str::limit($question, 200, ''),
+                            'answer' => Str::limit($answer, 500, ''),
+                        ];
+                    }
                 }
             }
         }

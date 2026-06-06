@@ -202,8 +202,11 @@ class EditorialContentService
 
                 return match ($block['type'] ?? '') {
                     'heading' => (string) ($data['text'] ?? ''),
-                    'paragraph' => strip_tags((string) ($data['html'] ?? '')),
-                    'callout' => strip_tags((string) ($data['body'] ?? $data['html'] ?? '')),
+                    'paragraph' => strip_tags((string) ($data['html'] ?? $data['text'] ?? '')),
+                    'callout' => strip_tags((string) ($data['body'] ?? $data['text'] ?? $data['html'] ?? '')),
+                    'layout' => implode(' ', app(EditorialLayoutRenderer::class)->extractPlainTextFromSlots(
+                        is_array($data['slots'] ?? null) ? $data['slots'] : [],
+                    )),
                     default => '',
                 };
             })

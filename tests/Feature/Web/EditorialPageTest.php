@@ -61,6 +61,53 @@ class EditorialPageTest extends TestCase
         $response->assertSee('Introduzione', false);
     }
 
+    public function test_layout_blocks_render_semantic_html_for_seo(): void
+    {
+        $this->createPublishedContent([
+            'slug' => 'layout-seo-test',
+            'title' => 'Articolo layout',
+            'body_blocks' => [
+                [
+                    'id' => '11111111-1111-4111-8111-111111111111',
+                    'type' => 'layout',
+                    'data' => [
+                        'template_id' => 'hero-coral',
+                        'slots' => [
+                            'eyebrow' => 'GUIDA',
+                            'title' => 'Titolo hero SEO',
+                            'subtitle' => 'Sottotitolo descrittivo',
+                            'cta' => 'Leggi',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => '22222222-2222-4222-8222-222222222222',
+                    'type' => 'layout',
+                    'data' => [
+                        'template_id' => 'faq-band',
+                        'slots' => [
+                            'title' => 'Domande frequenti',
+                            'q1' => 'Quanto costa?',
+                            'a1' => 'Dipende dalla zona.',
+                            'q2' => '',
+                            'a2' => '',
+                            'q3' => '',
+                            'a3' => '',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response = $this->get('/magazine/guide/layout-seo-test');
+
+        $response->assertOk();
+        $response->assertSee('editorial-layout--hero-coral', false);
+        $response->assertSee('<h2 class="editorial-layout__hero-title">Titolo hero SEO</h2>', false);
+        $response->assertSee('editorial-faq__question', false);
+        $response->assertSee('Quanto costa?', false);
+    }
+
     public function test_draft_content_returns_404(): void
     {
         EditorialContent::factory()

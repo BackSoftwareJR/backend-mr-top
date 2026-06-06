@@ -14,6 +14,7 @@ class StoreAgentEditorialDraftRequest extends FormRequest
      * @var list<string>
      */
     private const BLOCK_TYPES = [
+        'layout',
         'heading',
         'paragraph',
         'image',

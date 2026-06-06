@@ -90,11 +90,14 @@ class EditorialSearchIndexer
 
             $parts = array_merge($parts, match ($type) {
                 'heading' => [strip_tags((string) ($data['text'] ?? ''))],
-                'paragraph' => [strip_tags((string) ($data['html'] ?? ''))],
+                'paragraph' => [strip_tags((string) ($data['html'] ?? $data['text'] ?? ''))],
                 'callout' => [strip_tags((string) ($data['body'] ?? $data['text'] ?? ''))],
                 'faq' => $this->extractFaqText($data),
                 'quote' => [strip_tags((string) ($data['text'] ?? ''))],
                 'list' => $this->extractListText($data),
+                'layout' => app(EditorialLayoutRenderer::class)->extractPlainTextFromSlots(
+                    is_array($data['slots'] ?? null) ? $data['slots'] : [],
+                ),
                 default => [],
             });
         }

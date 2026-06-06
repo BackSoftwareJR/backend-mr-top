@@ -10,6 +10,10 @@ use Illuminate\Support\Str;
 
 class EditorialBlockRenderer
 {
+    public function __construct(
+        private readonly EditorialLayoutRenderer $layoutRenderer,
+    ) {}
+
     /**
      * @param  list<array<string, mixed>>|null  $blocks
      * @return array{
@@ -48,6 +52,7 @@ class EditorialBlockRenderer
                 'faq' => $this->renderFaq($data, $faqItems),
                 'quote' => $this->renderQuote($data),
                 'list' => $this->renderList($data),
+                'layout' => $this->layoutRenderer->render($data, $toc, $faqItems),
                 default => '',
             };
 
