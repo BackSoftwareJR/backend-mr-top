@@ -7,9 +7,10 @@ namespace App\Http\Controllers\Api\V1\B2C;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\V1\B2C\ContactIntentRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
+use App\Http\Resources\V1\EditorialContentCardResource;
 use App\Http\Resources\V1\LeadResource;
+use App\Services\Editorial\EditorialInternalSearchService;
 use App\Services\ExploreContactIntentService;
-use App\Services\Search\EditorialSearchService;
 use App\Services\Search\SearchOrchestratorFallback;
 use App\Services\Search\SearchOrchestratorService;
 use Illuminate\Http\JsonResponse;
@@ -22,7 +23,7 @@ class SearchController extends Controller
     public function __construct(
         private readonly SearchOrchestratorService $orchestrator,
         private readonly ExploreContactIntentService $contactIntentService,
-        private readonly EditorialSearchService $editorialSearch,
+        private readonly EditorialInternalSearchService $editorialSearch,
     ) {}
 
     public function orchestrate(Request $request): JsonResponse
@@ -56,15 +57,21 @@ class SearchController extends Controller
     {
         $validated = $request->validate([
             'q' => ['sometimes', 'nullable', 'string', 'max:500'],
-            'sector' => ['sometimes', 'nullable', 'string', 'max:80'],
+            'type' => ['sometimes', 'nullable', 'string', 'max:32'],
+            'rubric' => ['sometimes', 'nullable', 'string', 'max:80'],
             'limit' => ['sometimes', 'integer', 'min:1', 'max:20'],
         ]);
 
-        $items = $this->editorialSearch->search(
+        $contents = $this->editorialSearch->search(
             $validated['q'] ?? null,
-            $validated['sector'] ?? null,
-            (int) ($validated['limit'] ?? 5),
+            $validated['type'] ?? null,
+            $validated['rubric'] ?? null,
+            (int) ($validated['limit'] ?? 10),
         );
+
+        $items = collect($contents)
+            ->map(fn ($content) => (new EditorialContentCardResource($content))->resolve())
+            ->all();
 
         return ApiEnvelope::success(['items' => $items]);
     }

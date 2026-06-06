@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'body_text',
     'rubric',
     'tags',
+    'content_type',
+    'company_id',
     'published_at',
     'indexed_at',
 ])]

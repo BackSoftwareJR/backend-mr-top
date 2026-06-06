@@ -23,3 +23,7 @@ Schedule::command('editorial:generate-sitemaps')
 Schedule::command('editorial:generate-llms-txt')
     ->weeklyOn(1, '02:30')
     ->timezone('Europe/Rome');
+
+Schedule::command('editorial:process-index-queue')
+    ->everyFiveMinutes()
+    ->timezone('Europe/Rome');

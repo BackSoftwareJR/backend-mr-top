@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Editorial;
 
 use App\Enums\EditorialContentStatus;
+use App\Enums\EditorialIndexQueueAction;
 use App\Enums\EditorialModerationStatus;
 use App\Exceptions\ApiException;
 use App\Jobs\GenerateEditorialSeoJob;
@@ -19,6 +20,7 @@ class EditorialWorkflowService
 {
     public function __construct(
         private readonly EditorialSeoService $seoService,
+        private readonly EditorialIndexQueueService $indexQueueService,
     ) {}
     /**
      * @var array<string, list<string>>
@@ -82,6 +84,11 @@ class EditorialWorkflowService
 
             if ($toStatus === EditorialContentStatus::Published) {
                 $this->regeneratePublicFeeds();
+                $this->indexQueueService->enqueueAndDispatch($fresh, EditorialIndexQueueAction::Index);
+            }
+
+            if ($toStatus === EditorialContentStatus::Archived) {
+                $this->indexQueueService->enqueueAndDispatch($fresh, EditorialIndexQueueAction::Remove);
             }
 
             return $fresh;

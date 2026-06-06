@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
 use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
+use App\Http\Controllers\Api\V1\Admin\EditorialIndexController;
 use App\Http\Controllers\Api\V1\Admin\EditorialSeoController;
 use App\Http\Controllers\Api\V1\Admin\EditorialWorkflowController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
@@ -242,6 +243,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/contents/{uuid}/seo/regenerate', [EditorialSeoController::class, 'regenerate']);
         Route::post('/contents/{uuid}/seo/approve', [EditorialSeoController::class, 'approve']);
         Route::post('/contents/{uuid}/seo/reject', [EditorialSeoController::class, 'reject']);
+        Route::get('/index-rules', [EditorialIndexController::class, 'indexRules']);
+        Route::patch('/index-rules/{id}', [EditorialIndexController::class, 'updateIndexRule']);
+        Route::post('/reindex', [EditorialIndexController::class, 'reindex']);
+        Route::get('/index-queue', [EditorialIndexController::class, 'indexQueue']);
     });
 
     /*
