@@ -30,8 +30,15 @@ class EditorialSeoService
         return $this->groqService->generateAndStore($content);
     }
 
-    public function approve(EditorialContent $content, User $actor, ?int $generationId = null): EditorialContent
-    {
+    /**
+     * @param array<string, mixed>|null $manualOverrides
+     */
+    public function approve(
+        EditorialContent $content,
+        User $actor,
+        ?int $generationId = null,
+        ?array $manualOverrides = null,
+    ): EditorialContent {
         $generation = $this->resolveGeneration($content, $generationId);
 
         if ($generation === null) {
@@ -54,8 +61,13 @@ class EditorialSeoService
             );
         }
 
-        return DB::transaction(function () use ($content, $generation, $actor): EditorialContent {
+        return DB::transaction(function () use ($content, $generation, $actor, $manualOverrides): EditorialContent {
             $seoPack = $generation->seo_pack ?? [];
+
+            if (is_array($manualOverrides) && $manualOverrides !== []) {
+                $seoPack = $this->mergeManualOverrides($seoPack, $manualOverrides);
+            }
+
             $seoPack['approved'] = true;
             $seoPack['approved_by_user_id'] = $actor->id;
             $seoPack['approved_at'] = now()->toIso8601String();
@@ -191,6 +203,49 @@ class EditorialSeoService
         ));
 
         return $manualTitle !== '' && $manualDescription !== '';
+    }
+
+    /**
+     * @param array<string, mixed> $seoPack
+     * @param array<string, mixed> $manualOverrides
+     * @return array<string, mixed>
+     */
+    private function mergeManualOverrides(array $seoPack, array $manualOverrides): array
+    {
+        $filtered = array_filter(
+            $manualOverrides,
+            static fn (mixed $value): bool => $value !== null,
+        );
+
+        if ($filtered === []) {
+            return $seoPack;
+        }
+
+        $existing = is_array($seoPack['manual_overrides'] ?? null) ? $seoPack['manual_overrides'] : [];
+        $seoPack['manual_overrides'] = array_merge($existing, $filtered);
+
+        $applyFields = [
+            'seo_title',
+            'seo_description',
+            'excerpt',
+            'og_title',
+            'og_description',
+            'primary_keyword',
+            'secondary_keywords',
+            'suggested_tags',
+        ];
+
+        foreach ($applyFields as $field) {
+            if (array_key_exists($field, $filtered)) {
+                $seoPack[$field] = $filtered[$field];
+            }
+        }
+
+        if (array_key_exists('meta_description', $filtered)) {
+            $seoPack['seo_description'] = $filtered['meta_description'];
+        }
+
+        return $seoPack;
     }
 
     private function resolveGeneration(EditorialContent $content, ?int $generationId): ?EditorialSeoGeneration

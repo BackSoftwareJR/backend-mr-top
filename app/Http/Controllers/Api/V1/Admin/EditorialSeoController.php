@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\V1\Admin\ApproveEditorialSeoRequest;
 use App\Http\Resources\Concerns\ApiEnvelope;
 use App\Http\Resources\V1\EditorialContentResource;
 use App\Models\EditorialContent;
@@ -55,16 +56,23 @@ class EditorialSeoController extends Controller
         ], 201);
     }
 
-    public function approve(Request $request, string $uuid): JsonResponse
+    public function approve(ApproveEditorialSeoRequest $request, string $uuid): JsonResponse
     {
         $content = $this->findContent($uuid);
 
         $this->authorize('accessAdmin', EditorialContent::class);
         $this->authorize('approveSeo', $content);
 
-        $generationId = $request->integer('generation_id') ?: null;
+        $validated = $request->validated();
+        $generationId = isset($validated['generation_id']) ? (int) $validated['generation_id'] : null;
+        $manualOverrides = $validated['manual_overrides'] ?? null;
 
-        $content = $this->seoService->approve($content, $request->user(), $generationId);
+        $content = $this->seoService->approve(
+            $content,
+            $request->user(),
+            $generationId,
+            is_array($manualOverrides) ? $manualOverrides : null,
+        );
 
         return ApiEnvelope::success([
             'content' => new EditorialContentResource($content),

@@ -155,6 +155,51 @@ class EditorialSeoTest extends TestCase
         ]);
     }
 
+    public function test_approve_persists_manual_overrides_on_content(): void
+    {
+        $reviewer = $this->userWithRole('reviewer');
+        Sanctum::actingAs($reviewer);
+
+        $content = EditorialContent::factory()->create([
+            'sector_id' => $this->sector->id,
+            'rubric_id' => $this->rubric->id,
+            'rubric_slug' => $this->rubric->slug,
+            'status' => EditorialContentStatus::PendingReview,
+        ]);
+
+        $seoPack = $this->sampleSeoPack(82);
+
+        EditorialSeoGeneration::query()->create([
+            'content_id' => $content->id,
+            'seo_pack' => $seoPack,
+            'score' => 82,
+            'status' => EditorialSeoGenerationStatus::Pending,
+            'groq_model' => 'fallback',
+            'prompt_version' => 'editorial-seo-v1',
+        ]);
+
+        $customTitle = 'Titolo SEO personalizzato dal revisore';
+        $customDescription = 'Descrizione meta personalizzata con keyword principale e checklist.';
+
+        $this->postJson('/api/v1/admin/editorial/contents/'.$content->uuid.'/seo/approve', [
+            'manual_overrides' => [
+                'seo_title' => $customTitle,
+                'seo_description' => $customDescription,
+            ],
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.content.seo_pack.approved', true)
+            ->assertJsonPath('data.content.seo_pack.seo_title', $customTitle)
+            ->assertJsonPath('data.content.seo_pack.seo_description', $customDescription)
+            ->assertJsonPath('data.content.seo_pack.manual_overrides.seo_title', $customTitle)
+            ->assertJsonPath('data.content.seo_pack.manual_overrides.seo_description', $customDescription);
+
+        $content->refresh();
+        $this->assertSame($customTitle, $content->seo_pack['seo_title']);
+        $this->assertSame($customDescription, $content->seo_pack['seo_description']);
+        $this->assertSame($customTitle, $content->seo_pack['manual_overrides']['seo_title']);
+    }
+
     public function test_publish_blocked_without_approved_seo(): void
     {
         $chief = $this->userWithRole('chief_editor');
