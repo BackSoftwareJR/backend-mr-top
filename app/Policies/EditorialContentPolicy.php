@@ -12,6 +12,25 @@ use App\Models\User;
 
 class EditorialContentPolicy
 {
+    public function accessAdmin(User $user): bool
+    {
+        if ($user->user_type === UserType::Superadmin || $this->isAdmin($user)) {
+            return true;
+        }
+
+        if ($this->isStructureAuthor($user)) {
+            return false;
+        }
+
+        return $user->hasPermission('editorial.view')
+            || $user->hasPermission('editorial.create')
+            || $user->hasPermission('editorial.edit')
+            || $user->hasPermission('editorial.publish')
+            || $user->hasPermission('editorial.moderate')
+            || $user->hasPermission('editorial.seo.approve')
+            || $user->hasPermission('editorial.index.manage');
+    }
+
     public function viewAny(User $user): bool
     {
         return $this->isAdmin($user)

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
+use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\CompanyVettingController;
 use App\Http\Controllers\Api\V1\Admin\DashboardStatsController;
@@ -202,6 +203,21 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/notifications/{id}/read', [B2BDashboardController::class, 'markNotificationRead']);
             Route::post('/notifications/read-all', [B2BDashboardController::class, 'markAllNotificationsRead']);
         });
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin — Editorial CMS (Sanctum + policy; chief_editor / editor roles)
+    |--------------------------------------------------------------------------
+    */
+    Route::prefix('admin/editorial')->middleware(['auth:sanctum', 'throttle:admin'])->group(function (): void {
+        Route::get('/contents', [EditorialContentController::class, 'index']);
+        Route::post('/contents', [EditorialContentController::class, 'store']);
+        Route::get('/contents/{uuid}', [EditorialContentController::class, 'show']);
+        Route::patch('/contents/{uuid}', [EditorialContentController::class, 'update']);
+        Route::delete('/contents/{uuid}', [EditorialContentController::class, 'destroy']);
+        Route::post('/contents/{uuid}/revisions', [EditorialContentController::class, 'storeRevision']);
+        Route::get('/contents/{uuid}/revisions', [EditorialContentController::class, 'listRevisions']);
     });
 
     /*
