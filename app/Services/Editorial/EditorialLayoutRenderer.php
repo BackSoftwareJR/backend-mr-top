@@ -27,6 +27,9 @@ class EditorialLayoutRenderer
             'quote-spotlight' => $this->renderQuoteSpotlight($slots),
             'stats-row' => $this->renderStatsRow($slots),
             'cta-coral' => $this->renderCtaCoral($slots, $toc),
+            'interview-qa' => $this->renderInterviewQa($slots, $toc),
+            'event-card' => $this->renderEventCard($slots, $toc),
+            'checklist-band' => $this->renderChecklistBand($slots, $toc),
             default => '',
         };
     }
@@ -355,6 +358,188 @@ class EditorialLayoutRenderer
         }
 
         $html .= '</section>';
+
+        return $html;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slots
+     * @param  list<array{level: int, text: string, anchor: string}>  $toc
+     */
+    private function renderInterviewQa(array $slots, array &$toc): string
+    {
+        $title = trim(strip_tags((string) ($slots['title'] ?? '')));
+        $intro = trim(strip_tags((string) ($slots['intro'] ?? '')));
+        $pairs = [
+            ['q1', 'a1'],
+            ['q2', 'a2'],
+            ['q3', 'a3'],
+        ];
+
+        $hasContent = $title !== '' || $intro !== '';
+
+        foreach ($pairs as [$qKey, $aKey]) {
+            if (trim((string) ($slots[$qKey] ?? '')) !== '') {
+                $hasContent = true;
+                break;
+            }
+        }
+
+        if (! $hasContent) {
+            return '';
+        }
+
+        if ($title !== '') {
+            $anchor = Str::slug($title);
+            $toc[] = ['level' => 2, 'text' => $title, 'anchor' => $anchor !== '' ? $anchor : 'interview'];
+        }
+
+        $html = '<section class="editorial-layout editorial-layout--interview-qa" aria-label="Intervista">';
+
+        if ($title !== '') {
+            $html .= '<h2 class="editorial-layout__interview-title">'.e($title).'</h2>';
+        }
+
+        if ($intro !== '') {
+            $html .= '<p class="editorial-layout__interview-intro">'.nl2br(e($intro)).'</p>';
+        }
+
+        $html .= '<dl class="editorial-layout__interview-qa">';
+
+        foreach ($pairs as [$qKey, $aKey]) {
+            $question = trim(strip_tags((string) ($slots[$qKey] ?? '')));
+            $answer = trim(strip_tags((string) ($slots[$aKey] ?? '')));
+
+            if ($question === '') {
+                continue;
+            }
+
+            if ($question !== '') {
+                $anchor = Str::slug($question);
+                $toc[] = ['level' => 3, 'text' => $question, 'anchor' => $anchor !== '' ? $anchor : 'question'];
+            }
+
+            $html .= '<div class="editorial-layout__interview-item">';
+            $html .= '<dt class="editorial-layout__interview-question"><h3>'.e($question).'</h3></dt>';
+
+            if ($answer !== '') {
+                $html .= '<dd class="editorial-layout__interview-answer"><p>'.nl2br(e($answer)).'</p></dd>';
+            }
+
+            $html .= '</div>';
+        }
+
+        $html .= '</dl></section>';
+
+        return $html;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slots
+     * @param  list<array{level: int, text: string, anchor: string}>  $toc
+     */
+    private function renderEventCard(array $slots, array &$toc): string
+    {
+        $title = trim(strip_tags((string) ($slots['title'] ?? '')));
+        $eventDate = trim(strip_tags((string) ($slots['event_date'] ?? '')));
+        $eventTime = trim(strip_tags((string) ($slots['event_time'] ?? '')));
+        $eventLocation = trim(strip_tags((string) ($slots['event_location'] ?? '')));
+        $description = trim(strip_tags((string) ($slots['description'] ?? '')));
+        $ctaLabel = trim(strip_tags((string) ($slots['cta_label'] ?? '')));
+        $ctaUrl = trim((string) ($slots['cta_url'] ?? ''));
+
+        if ($title === '' && $eventDate === '' && $description === '') {
+            return '';
+        }
+
+        if ($title !== '') {
+            $anchor = Str::slug($title);
+            $toc[] = ['level' => 2, 'text' => $title, 'anchor' => $anchor !== '' ? $anchor : 'event'];
+        }
+
+        $html = '<article class="editorial-layout editorial-layout--event-card" itemscope itemtype="https://schema.org/Event">';
+
+        if ($title !== '') {
+            $html .= '<h2 class="editorial-layout__event-title" itemprop="name">'.e($title).'</h2>';
+        }
+
+        $html .= '<div class="editorial-layout__event-meta">';
+
+        if ($eventDate !== '') {
+            $html .= '<p class="editorial-layout__event-date"><span class="editorial-layout__event-label">Data</span> <time itemprop="startDate">'.e($eventDate).'</time></p>';
+        }
+
+        if ($eventTime !== '') {
+            $html .= '<p class="editorial-layout__event-time"><span class="editorial-layout__event-label">Orario</span> '.e($eventTime).'</p>';
+        }
+
+        if ($eventLocation !== '') {
+            $html .= '<p class="editorial-layout__event-location" itemprop="location">'.e($eventLocation).'</p>';
+        }
+
+        $html .= '</div>';
+
+        if ($description !== '') {
+            $html .= '<p class="editorial-layout__event-description" itemprop="description">'.nl2br(e($description)).'</p>';
+        }
+
+        if ($ctaLabel !== '' && $ctaUrl !== '') {
+            $html .= '<p class="editorial-layout__event-cta"><a href="'.e($ctaUrl).'" class="editorial-layout__event-button" rel="noopener">'.e($ctaLabel).'</a></p>';
+        }
+
+        $html .= '</article>';
+
+        return $html;
+    }
+
+    /**
+     * @param  array<string, mixed>  $slots
+     * @param  list<array{level: int, text: string, anchor: string}>  $toc
+     */
+    private function renderChecklistBand(array $slots, array &$toc): string
+    {
+        $title = trim(strip_tags((string) ($slots['title'] ?? '')));
+        $intro = trim(strip_tags((string) ($slots['intro'] ?? '')));
+        $items = [];
+
+        foreach (['item1', 'item2', 'item3', 'item4', 'item5'] as $key) {
+            $item = trim(strip_tags((string) ($slots[$key] ?? '')));
+
+            if ($item !== '') {
+                $items[] = $item;
+            }
+        }
+
+        if ($title === '' && $intro === '' && $items === []) {
+            return '';
+        }
+
+        if ($title !== '') {
+            $anchor = Str::slug($title);
+            $toc[] = ['level' => 3, 'text' => $title, 'anchor' => $anchor !== '' ? $anchor : 'checklist'];
+        }
+
+        $html = '<aside class="editorial-layout editorial-layout--checklist" role="note" aria-label="Checklist">';
+
+        if ($title !== '') {
+            $html .= '<h3 class="editorial-layout__checklist-title">'.e($title).'</h3>';
+        }
+
+        if ($intro !== '') {
+            $html .= '<p class="editorial-layout__checklist-intro">'.nl2br(e($intro)).'</p>';
+        }
+
+        if ($items !== []) {
+            $html .= '<ul class="editorial-layout__checklist-list" role="list">';
+
+            foreach ($items as $item) {
+                $html .= '<li>'.e($item).'</li>';
+            }
+
+            $html .= '</ul>';
+        }
+
+        $html .= '</aside>';
 
         return $html;
     }

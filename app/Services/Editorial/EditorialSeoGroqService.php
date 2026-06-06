@@ -216,23 +216,49 @@ PROMPT;
                 continue;
             }
 
-            $type = $block['type'] ?? '';
+            $type = (string) ($block['type'] ?? '');
             $data = $block['data'] ?? [];
 
             if (! is_array($data)) {
                 continue;
             }
 
-            if ($type === 'heading') {
-                $parts[] = strip_tags((string) ($data['text'] ?? ''));
-            }
+            $extracted = match ($type) {
+                'heading' => [strip_tags((string) ($data['text'] ?? ''))],
+                'paragraph' => [strip_tags((string) ($data['html'] ?? $data['text'] ?? ''))],
+                'callout' => [strip_tags((string) ($data['body'] ?? $data['text'] ?? ''))],
+                'quote' => [strip_tags((string) ($data['text'] ?? ''))],
+                'layout' => $this->extractLayoutPlainText($data),
+                default => [],
+            };
 
-            if ($type === 'paragraph') {
-                $parts[] = strip_tags((string) ($data['html'] ?? ''));
+            foreach ($extracted as $part) {
+                $part = trim($part);
+
+                if ($part !== '') {
+                    $parts[] = $part;
+                }
             }
         }
 
-        return trim(implode(' ', array_filter($parts)));
+        return trim(preg_replace('/\s+/u', ' ', implode(' ', $parts)) ?? '');
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return list<string>
+     */
+    private function extractLayoutPlainText(array $data): array
+    {
+        $templateId = (string) ($data['template_id'] ?? '');
+        $slots = is_array($data['slots'] ?? null) ? $data['slots'] : [];
+        $textParts = app(EditorialLayoutRenderer::class)->extractPlainTextFromSlots($slots);
+
+        if ($templateId !== '') {
+            array_unshift($textParts, 'layout:'.$templateId);
+        }
+
+        return $textParts;
     }
 
     private function guessPrimaryKeyword(string $title, ?string $rubricSlug): string

@@ -61,6 +61,78 @@ class EditorialPageTest extends TestCase
         $response->assertSee('Introduzione', false);
     }
 
+    public function test_new_layout_templates_render_semantic_html(): void
+    {
+        $this->createPublishedContent([
+            'slug' => 'layout-templates-7d',
+            'title' => 'Test layout Sprint 7d',
+            'body_blocks' => [
+                [
+                    'id' => '33333333-3333-4333-8333-333333333333',
+                    'type' => 'layout',
+                    'data' => [
+                        'template_id' => 'interview-qa',
+                        'slots' => [
+                            'title' => 'Colloquio con il geriatra',
+                            'intro' => 'Presentazione dell’esperto.',
+                            'q1' => 'Come scegliere una RSA?',
+                            'a1' => 'Valuta servizi e costi.',
+                            'q2' => '',
+                            'a2' => '',
+                            'q3' => '',
+                            'a3' => '',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => '44444444-4444-4444-8444-444444444444',
+                    'type' => 'layout',
+                    'data' => [
+                        'template_id' => 'event-card',
+                        'slots' => [
+                            'title' => 'Webinar assistenza domiciliare',
+                            'event_date' => '20 giugno 2026',
+                            'event_time' => '18:00',
+                            'event_location' => 'Online',
+                            'description' => 'Serata informativa gratuita.',
+                            'cta_label' => 'Iscriviti',
+                            'cta_url' => 'https://wenando.com/eventi/webinar',
+                        ],
+                    ],
+                ],
+                [
+                    'id' => '55555555-5555-4555-8555-555555555555',
+                    'type' => 'layout',
+                    'data' => [
+                        'template_id' => 'checklist-band',
+                        'slots' => [
+                            'title' => 'Checklist anti-truffe',
+                            'intro' => 'Verifica prima di firmare.',
+                            'item1' => 'Chiedi sempre il contratto scritto',
+                            'item2' => 'Non pagare anticipi in contanti',
+                            'item3' => '',
+                            'item4' => '',
+                            'item5' => '',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $response = $this->get('/magazine/guide/layout-templates-7d');
+
+        $response->assertOk();
+        $response->assertSee('editorial-layout--interview-qa', false);
+        $response->assertSee('<h2 class="editorial-layout__interview-title">Colloquio con il geriatra</h2>', false);
+        $response->assertSee('<h3>Come scegliere una RSA?</h3>', false);
+        $response->assertSee('editorial-layout--event-card', false);
+        $response->assertSee('itemprop="name"', false);
+        $response->assertSee('Webinar assistenza domiciliare', false);
+        $response->assertSee('editorial-layout--checklist', false);
+        $response->assertSee('<ul class="editorial-layout__checklist-list"', false);
+        $response->assertSee('Chiedi sempre il contratto scritto', false);
+    }
+
     public function test_layout_blocks_render_semantic_html_for_seo(): void
     {
         $this->createPublishedContent([
