@@ -6,6 +6,10 @@ return [
 
     'site_url' => env('EDITORIAL_SITE_URL', env('APP_URL', 'https://wenando.com')),
 
+    'preview_ttl_hours' => (int) env('EDITORIAL_PREVIEW_TTL_HOURS', 24),
+
+    'preview_secret' => env('EDITORIAL_PREVIEW_SECRET'),
+
     'structure_disclaimer' => 'Contenuto redatto dalla struttura. Wenando non garantisce l\'accuratezza delle informazioni e non sostituisce consulenza medica o professionale.',
 
     'seo' => [

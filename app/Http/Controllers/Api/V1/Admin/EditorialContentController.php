@@ -12,6 +12,7 @@ use App\Http\Resources\V1\EditorialContentResource;
 use App\Models\EditorialContent;
 use App\Services\Editorial\EditorialContentService;
 use App\Services\Editorial\EditorialOptimisticLock;
+use App\Services\Editorial\EditorialPreviewService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -20,6 +21,7 @@ class EditorialContentController extends Controller
     public function __construct(
         private readonly EditorialContentService $editorialContentService,
         private readonly EditorialOptimisticLock $optimisticLock,
+        private readonly EditorialPreviewService $previewService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -186,6 +188,21 @@ class EditorialContentController extends Controller
 
         return ApiEnvelope::success([
             'revisions' => $revisions,
+        ]);
+    }
+
+    public function previewToken(string $uuid): JsonResponse
+    {
+        $content = $this->findContent($uuid);
+
+        $this->authorize('accessAdmin', EditorialContent::class);
+        $this->authorize('view', $content);
+
+        $issued = $this->previewService->generate($content->uuid);
+
+        return ApiEnvelope::success([
+            'preview_url' => $this->previewService->previewUrl($content->uuid, $issued['token']),
+            'expires_at' => $issued['expires_at']->toIso8601String(),
         ]);
     }
 

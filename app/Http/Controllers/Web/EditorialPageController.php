@@ -40,6 +40,11 @@ class EditorialPageController extends Controller
             abort(404);
         }
 
+        return $this->renderShowView($content);
+    }
+
+    public function renderShowView(EditorialContent $content): View
+    {
         return view('editorial.show', $this->pageViewData($content));
     }
 

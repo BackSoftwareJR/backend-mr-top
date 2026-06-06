@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\EditorialFeedController;
 use App\Http\Controllers\Web\EditorialPageController;
+use App\Http\Controllers\Web\PreviewEditorialController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -10,6 +11,7 @@ Route::get('/', function () {
 
 Route::get('/magazine', [EditorialPageController::class, 'hub'])->name('editorial.hub');
 Route::get('/magazine/{rubricSlug}/{slug}', [EditorialPageController::class, 'show'])->name('editorial.show');
+Route::get('/preview/editorial/{uuid}', [PreviewEditorialController::class, 'show'])->name('editorial.preview');
 
 Route::get('/feed.xml', [EditorialFeedController::class, 'rss'])->name('editorial.feed');
 Route::get('/magazine/feed.xml', [EditorialFeedController::class, 'rss']);

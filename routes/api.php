@@ -235,6 +235,7 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/contents/{uuid}', [EditorialContentController::class, 'destroy']);
         Route::post('/contents/{uuid}/revisions', [EditorialContentController::class, 'storeRevision']);
         Route::get('/contents/{uuid}/revisions', [EditorialContentController::class, 'listRevisions']);
+        Route::post('/contents/{uuid}/preview-token', [EditorialContentController::class, 'previewToken']);
         Route::post('/contents/{uuid}/transition', [EditorialWorkflowController::class, 'transition']);
         Route::get('/review-queue', [EditorialWorkflowController::class, 'reviewQueue']);
         Route::get('/contents/{uuid}/seo', [EditorialSeoController::class, 'show']);
