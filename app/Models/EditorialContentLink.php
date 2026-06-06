@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'target_content_id',
     'link_type',
     'anchor_text',
+    'relevance_score',
 ])]
 class EditorialContentLink extends Model
 {
@@ -24,6 +25,7 @@ class EditorialContentLink extends Model
     {
         return [
             'link_type' => EditorialContentLinkType::class,
+            'relevance_score' => 'float',
         ];
     }
 

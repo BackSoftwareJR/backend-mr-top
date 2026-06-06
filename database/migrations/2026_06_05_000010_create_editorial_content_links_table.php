@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('target_content_id')->constrained('editorial_contents')->cascadeOnDelete();
             $table->enum('link_type', EditorialContentLinkType::values())->default(EditorialContentLinkType::Related->value);
             $table->string('anchor_text', 200)->nullable();
+            $table->decimal('relevance_score', 6, 4)->nullable();
             $table->timestamps();
 
             $table->unique(

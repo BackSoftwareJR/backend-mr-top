@@ -9,6 +9,7 @@ use App\Enums\EditorialIndexQueueAction;
 use App\Enums\EditorialModerationStatus;
 use App\Exceptions\ApiException;
 use App\Jobs\GenerateEditorialSeoJob;
+use App\Jobs\SuggestInternalLinksJob;
 use App\Models\EditorialContent;
 use App\Models\EditorialModerationQueue;
 use App\Models\EditorialWorkflowEvent;
@@ -85,6 +86,7 @@ class EditorialWorkflowService
             if ($toStatus === EditorialContentStatus::Published) {
                 $this->regeneratePublicFeeds();
                 $this->indexQueueService->enqueueAndDispatch($fresh, EditorialIndexQueueAction::Index);
+                SuggestInternalLinksJob::dispatch($fresh->id);
             }
 
             if ($toStatus === EditorialContentStatus::Archived) {

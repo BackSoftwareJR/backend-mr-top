@@ -11,6 +11,7 @@ enum EditorialContentLinkType: string
     case SeriesNext = 'series_next';
     case SeriesPrev = 'series_prev';
     case StructureProfile = 'structure_profile';
+    case Suggested = 'suggested';
 
     /**
      * @return list<string>

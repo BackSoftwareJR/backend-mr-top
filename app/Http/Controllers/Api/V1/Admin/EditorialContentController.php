@@ -13,6 +13,7 @@ use App\Models\EditorialContent;
 use App\Services\Editorial\EditorialContentService;
 use App\Services\Editorial\EditorialOptimisticLock;
 use App\Services\Editorial\EditorialPreviewService;
+use App\Services\Editorial\SuggestInternalLinksService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -22,6 +23,7 @@ class EditorialContentController extends Controller
         private readonly EditorialContentService $editorialContentService,
         private readonly EditorialOptimisticLock $optimisticLock,
         private readonly EditorialPreviewService $previewService,
+        private readonly SuggestInternalLinksService $suggestInternalLinksService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -203,6 +205,24 @@ class EditorialContentController extends Controller
         return ApiEnvelope::success([
             'preview_url' => $this->previewService->previewUrl($content->uuid, $issued['token']),
             'expires_at' => $issued['expires_at']->toIso8601String(),
+        ]);
+    }
+
+    public function suggestedLinks(string $uuid): JsonResponse
+    {
+        $content = $this->findContent($uuid);
+
+        $this->authorize('accessAdmin', EditorialContent::class);
+        $this->authorize('view', $content);
+
+        $suggestions = $this->suggestInternalLinksService->storedSuggestions($content);
+
+        if ($suggestions === []) {
+            $suggestions = $this->suggestInternalLinksService->suggest($content);
+        }
+
+        return ApiEnvelope::success([
+            'suggestions' => $suggestions,
         ]);
     }
 
