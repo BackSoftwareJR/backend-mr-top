@@ -6,6 +6,7 @@ use App\Http\Middleware\HandleIdempotency;
 use App\Http\Middleware\LogApiRequest;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SetSentryContext;
+use App\Http\Middleware\VerifyEditorialAgentWebhookSignature;
 use App\Http\Middleware\VerifyWenandoWebhookSecret;
 use App\Http\Responses\ApiErrorResponse;
 use App\Support\ApiRequestLogger;
@@ -38,6 +39,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
             'idempotent' => HandleIdempotency::class,
             'wenando.webhook' => VerifyWenandoWebhookSecret::class,
+            'editorial.agent.webhook' => VerifyEditorialAgentWebhookSignature::class,
         ]);
 
         $middleware->statefulApi();

@@ -22,6 +22,7 @@ class EditorialPermissionSeeder extends Seeder
         'editorial.moderate',
         'editorial.index.manage',
         'editorial.seo.approve',
+        'editorial.agent',
     ];
 
     public function run(): void
@@ -45,6 +46,7 @@ class EditorialPermissionSeeder extends Seeder
             'editor' => $permissionIds(['editorial.view', 'editorial.create', 'editorial.edit']),
             'reviewer' => $permissionIds(['editorial.view', 'editorial.moderate', 'editorial.seo.approve']),
             'structure_author' => $permissionIds(['editorial.create']),
+            'editorial_agent' => $permissionIds(['editorial.agent']),
         ];
 
         foreach ($roles as $roleName => $ids) {

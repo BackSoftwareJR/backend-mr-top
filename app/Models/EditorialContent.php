@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
 
 #[Fillable([
+    'external_ref',
     'slug',
     'content_type',
     'status',

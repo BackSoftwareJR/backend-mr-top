@@ -10,6 +10,10 @@ return [
 
     'preview_secret' => env('EDITORIAL_PREVIEW_SECRET'),
 
+    'agent_webhook_secret' => env('EDITORIAL_AGENT_WEBHOOK_SECRET'),
+
+    'agent_user_email' => env('EDITORIAL_AGENT_USER_EMAIL', 'agent@wenando.system'),
+
     'structure_disclaimer' => 'Contenuto redatto dalla struttura. Wenando non garantisce l\'accuratezza delle informazioni e non sostituisce consulenza medica o professionale.',
 
     'seo' => [
