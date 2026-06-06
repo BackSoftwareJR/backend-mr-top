@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdvisorBookingsController;
+use App\Http\Controllers\Api\V1\Admin\AdminEditorialMetricsController;
 use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
 use App\Http\Controllers\Api\V1\Admin\EditorialIndexController;
 use App\Http\Controllers\Api\V1\Admin\EditorialSeoController;
@@ -47,6 +48,7 @@ use App\Http\Controllers\Api\V1\User\PrivacyController;
 use App\Http\Controllers\Api\V1\User\UserAreaController;
 use App\Http\Controllers\Api\V1\Webhooks\PaymentWebhookController;
 use App\Http\Controllers\Api\V1\Webhooks\StripePaymentWebhookController;
+use App\Http\Controllers\Webhooks\AgentEditorialWebhookController;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Route;
 
@@ -64,6 +66,9 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/webhooks/payments/{provider}', [PaymentWebhookController::class, 'handle'])
         ->where('provider', 'mock|mollie')
         ->middleware(['wenando.webhook', 'throttle:60,1']);
+
+    Route::post('/webhooks/editorial/agent-draft', [AgentEditorialWebhookController::class, 'store'])
+        ->middleware(['editorial.agent.webhook', 'throttle:60,1']);
 
     Route::post('/login', [B2BAuthController::class, 'login'])
         ->middleware('throttle:auth-otp-verify');
@@ -231,6 +236,7 @@ Route::prefix('v1')->group(function (): void {
     |--------------------------------------------------------------------------
     */
     Route::prefix('admin/editorial')->middleware(['auth:sanctum', 'throttle:admin'])->group(function (): void {
+        Route::get('/metrics', [AdminEditorialMetricsController::class, 'index']);
         Route::get('/contents', [EditorialContentController::class, 'index']);
         Route::post('/contents', [EditorialContentController::class, 'store']);
         Route::get('/contents/{uuid}', [EditorialContentController::class, 'show']);
