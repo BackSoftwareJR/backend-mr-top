@@ -39,6 +39,7 @@ PROMPT;
 
     public function __construct(
         private readonly EditorialSeoScorer $scorer,
+        private readonly EditorialNotificationService $notificationService,
     ) {}
 
     public function isConfigured(): bool
@@ -72,7 +73,7 @@ PROMPT;
 
         $latencyMs = (int) round((microtime(true) - $start) * 1000);
 
-        return EditorialSeoGeneration::query()->create([
+        $generation = EditorialSeoGeneration::query()->create([
             'content_id' => $content->id,
             'groq_payload' => $groqPayload,
             'seo_pack' => $seoPack,
@@ -83,6 +84,14 @@ PROMPT;
             'latency_ms' => $latencyMs,
             'error_message' => $source === 'fallback' && $this->isConfigured() ? 'Groq call failed; used rule-based fallback' : null,
         ]);
+
+        $minScore = (int) config('editorial.seo.min_score');
+
+        if ((int) $scored['score'] < $minScore) {
+            $this->notificationService->notifySeoNeedsReview($content, $generation, 'low_score');
+        }
+
+        return $generation;
     }
 
     /**

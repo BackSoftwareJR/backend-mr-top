@@ -18,6 +18,7 @@ class EditorialSeoService
 {
     public function __construct(
         private readonly EditorialSeoGroqService $groqService,
+        private readonly EditorialNotificationService $notificationService,
     ) {}
 
     public function dispatchGeneration(EditorialContent $content): void
@@ -123,7 +124,11 @@ class EditorialSeoService
             'error_message' => $note,
         ]);
 
-        return $generation->fresh();
+        $fresh = $generation->fresh();
+        $content->loadMissing(['company', 'moderationQueueEntry']);
+        $this->notificationService->notifySeoNeedsReview($content, $fresh, 'rejected');
+
+        return $fresh;
     }
 
     /**

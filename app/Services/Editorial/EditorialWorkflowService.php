@@ -22,6 +22,7 @@ class EditorialWorkflowService
     public function __construct(
         private readonly EditorialSeoService $seoService,
         private readonly EditorialIndexQueueService $indexQueueService,
+        private readonly EditorialNotificationService $notificationService,
     ) {}
     /**
      * @var array<string, list<string>>
@@ -73,7 +74,7 @@ class EditorialWorkflowService
             $content->status = $toStatus;
             $content->save();
 
-            EditorialWorkflowEvent::query()->create([
+            $workflowEvent = EditorialWorkflowEvent::query()->create([
                 'content_id' => $content->id,
                 'actor_user_id' => $actor->id,
                 'from_status' => $fromStatus,
@@ -82,6 +83,15 @@ class EditorialWorkflowService
             ]);
 
             $fresh = $content->fresh(['rubric', 'moderationQueueEntry', 'company']);
+
+            $this->notificationService->handleWorkflowTransition(
+                $fresh,
+                $fromStatus,
+                $toStatus,
+                $actor,
+                $note,
+                $workflowEvent->id,
+            );
 
             if ($toStatus === EditorialContentStatus::Published) {
                 $this->regeneratePublicFeeds();

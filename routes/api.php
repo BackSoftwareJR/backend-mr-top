@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Admin\AdminEditorialMetricsController;
 use App\Http\Controllers\Api\V1\Admin\EditorialContentController;
 use App\Http\Controllers\Api\V1\Admin\EditorialIndexController;
 use App\Http\Controllers\Api\V1\Admin\EditorialSeoController;
+use App\Http\Controllers\Api\V1\Admin\EditorialNotificationController as AdminEditorialNotificationController;
 use App\Http\Controllers\Api\V1\Admin\EditorialWorkflowController;
 use App\Http\Controllers\Api\V1\Admin\AnalyticsController;
 use App\Http\Controllers\Api\V1\Admin\CompanyVettingController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Api\V1\B2B\CoverageZoneController;
 use App\Http\Controllers\Api\V1\B2B\CrmController;
 use App\Http\Controllers\Api\V1\B2B\B2BEditorialAnalyticsController;
 use App\Http\Controllers\Api\V1\B2B\EditorialContentController as B2BEditorialContentController;
+use App\Http\Controllers\Api\V1\B2B\EditorialNotificationController as B2BEditorialNotificationController;
 use App\Http\Controllers\Api\V1\B2B\LeadMarketplaceController;
 use App\Http\Controllers\Api\V1\B2B\OnboardingController;
 use App\Http\Controllers\Api\V1\B2B\RegisterController;
@@ -229,6 +231,8 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('/contents/{uuid}', [B2BEditorialContentController::class, 'show']);
                 Route::patch('/contents/{uuid}', [B2BEditorialContentController::class, 'update']);
                 Route::post('/contents/{uuid}/submit', [B2BEditorialContentController::class, 'submit']);
+                Route::get('/notifications', [B2BEditorialNotificationController::class, 'index']);
+                Route::patch('/notifications/{id}/read', [B2BEditorialNotificationController::class, 'markRead']);
             });
         });
     });
@@ -261,6 +265,9 @@ Route::prefix('v1')->group(function (): void {
         Route::patch('/index-rules/{id}', [EditorialIndexController::class, 'updateIndexRule']);
         Route::post('/reindex', [EditorialIndexController::class, 'reindex']);
         Route::get('/index-queue', [EditorialIndexController::class, 'indexQueue']);
+        Route::get('/notifications', [AdminEditorialNotificationController::class, 'index']);
+        Route::patch('/notifications/{id}/read', [AdminEditorialNotificationController::class, 'markRead']);
+        Route::post('/notifications/read-all', [AdminEditorialNotificationController::class, 'markAllRead']);
     });
 
     /*

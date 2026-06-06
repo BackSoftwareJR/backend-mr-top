@@ -31,3 +31,7 @@ Schedule::command('editorial:process-index-queue')
 Schedule::command('editorial:purge-view-events')
     ->weeklyOn(1, '03:30')
     ->timezone('Europe/Rome');
+
+Schedule::command('editorial:review-digest')
+    ->dailyAt('08:00')
+    ->timezone('Europe/Rome');
